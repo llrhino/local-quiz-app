@@ -86,6 +86,15 @@ No DB schema changes needed (question_type and choices_json are TEXT).
 - Handle BOM-prefixed UTF-8 when parsing imported JSON files
 - Release builds: `strip` + `opt-level = "s"` for binary size
 
+## Development Process
+
+- **常にTDD（テスト駆動開発）で実装すること。** 以下の手順を守る:
+  1. **Red:** まず失敗するテストを書く
+  2. **Green:** テストを通す最小限の実装を書く
+  3. **Refactor:** テストが通る状態を維持しつつコードを整理する
+- テストを書く前にプロダクションコードを書いてはならない
+- フロントエンドは Vitest + React Testing Library、Rust は cargo test を使用する
+
 ## Design Documents
 
 - `docs/requirements.md` — Full functional/non-functional requirements
