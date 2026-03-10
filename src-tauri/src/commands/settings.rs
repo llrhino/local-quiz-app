@@ -1,4 +1,5 @@
-use tauri::State;
+use tauri::{AppHandle, State};
+use tauri_plugin_dialog::DialogExt;
 
 use crate::db::Database;
 use crate::models::AppSettings;
@@ -18,6 +19,12 @@ pub fn update_setting(
 }
 
 #[tauri::command]
-pub fn open_file_dialog() -> Option<String> {
-    None
+pub fn open_file_dialog(app: AppHandle) -> Option<String> {
+    let file = app
+        .dialog()
+        .file()
+        .add_filter("JSON ファイル", &["json"])
+        .blocking_pick_file();
+
+    file.map(|path| path.to_string())
 }
