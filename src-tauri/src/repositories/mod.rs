@@ -4,7 +4,7 @@ pub mod quiz_pack_repo;
 pub mod settings_repo;
 
 #[cfg(test)]
-mod test_helpers {
+pub(crate) mod test_helpers {
     use rusqlite::Connection;
 
     use crate::db::migrations;
