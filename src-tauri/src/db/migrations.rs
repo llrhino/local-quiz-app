@@ -1,8 +1,30 @@
 use rusqlite::Connection;
 
+const CURRENT_SCHEMA_VERSION: i64 = 1;
+
 pub fn run(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
+    let current_version: i64 =
+        connection.query_row("PRAGMA user_version;", [], |row| row.get(0))?;
+
+    if current_version > CURRENT_SCHEMA_VERSION {
+        return Err(format!(
+            "database schema version {current_version} is newer than supported version {CURRENT_SCHEMA_VERSION}"
+        )
+        .into());
+    }
+
+    if current_version < 1 {
+        migrate_to_v1(connection)?;
+    }
+
+    Ok(())
+}
+
+fn migrate_to_v1(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
     connection.execute_batch(
         "
+        BEGIN;
+
         CREATE TABLE IF NOT EXISTS quiz_packs (
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
@@ -46,6 +68,10 @@ pub fn run(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
 
         INSERT OR IGNORE INTO app_settings (key, value) VALUES ('question_order', 'sequential');
         INSERT OR IGNORE INTO app_settings (key, value) VALUES ('theme', 'light');
+
+        PRAGMA user_version = 1;
+
+        COMMIT;
         ",
     )?;
 
