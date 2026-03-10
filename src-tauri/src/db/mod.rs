@@ -1,4 +1,4 @@
-mod migrations;
+pub(crate) mod migrations;
 
 use std::path::PathBuf;
 use std::sync::Mutex;
@@ -13,6 +13,7 @@ impl Database {
     pub fn new(path: PathBuf) -> Result<Self, Box<dyn std::error::Error>> {
         let connection = Connection::open(path)?;
         connection.pragma_update(None, "journal_mode", "WAL")?;
+        connection.pragma_update(None, "foreign_keys", true)?;
         migrations::run(&connection)?;
 
         Ok(Self {
@@ -58,14 +59,29 @@ mod tests {
 
         let journal_mode = database
             .with_connection(|connection| {
-                let mode = connection.query_row("PRAGMA journal_mode;", [], |row| {
-                    row.get::<_, String>(0)
-                })?;
+                let mode = connection
+                    .query_row("PRAGMA journal_mode;", [], |row| row.get::<_, String>(0))?;
                 Ok(mode)
             })
             .expect("journal mode should be readable");
 
         assert_eq!(journal_mode, "wal");
+
+        std::fs::remove_file(path).expect("test database file should be removed");
+    }
+
+    #[test]
+    fn enables_foreign_keys() {
+        let (database, path) = open_test_database();
+
+        let foreign_keys: i64 = database
+            .with_connection(|connection| {
+                let enabled = connection.query_row("PRAGMA foreign_keys;", [], |row| row.get(0))?;
+                Ok(enabled)
+            })
+            .expect("foreign_keys pragma should be readable");
+
+        assert_eq!(foreign_keys, 1);
 
         std::fs::remove_file(path).expect("test database file should be removed");
     }
