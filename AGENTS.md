@@ -2,6 +2,13 @@
 
 This file provides guidance to Codex when working with code in this repository.
 
+## 言語設定
+
+- **すべての応答・コメント・コミットメッセージ・ドキュメントは日本語で記述すること。**
+- **アプリのUI表示（ボタンラベル、見出し、メッセージ、プレースホルダー等）も日本語で実装すること。**
+- コード中の識別子（変数名・関数名・型名など）は英語のままでよいが、コメントやdocstring、エラーメッセージの説明は日本語を使用する。
+- Git コミットメッセージも日本語で書くこと。
+
 ## Project Overview
 
 Local Quiz App — a Windows desktop quiz application for offline knowledge training. Built with Tauri v2 (Rust backend + React frontend), fully offline with no network communication.
