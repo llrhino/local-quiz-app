@@ -9,7 +9,11 @@ pub fn get_settings(_database: State<'_, Database>) -> Result<AppSettings, Strin
 }
 
 #[tauri::command]
-pub fn update_setting(_key: String, _value: String, _database: State<'_, Database>) -> Result<(), String> {
+pub fn update_setting(
+    _key: String,
+    _value: String,
+    _database: State<'_, Database>,
+) -> Result<(), String> {
     Ok(())
 }
 

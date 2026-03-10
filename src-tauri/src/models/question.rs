@@ -54,7 +54,10 @@ mod tests {
 
         let result = serde_json::from_str::<Question>(json);
 
-        assert!(result.is_ok(), "true_false問題はbooleanのanswerを受け付ける必要がある");
+        assert!(
+            result.is_ok(),
+            "true_false問題はbooleanのanswerを受け付ける必要がある"
+        );
     }
 
     #[test]
@@ -76,12 +79,16 @@ mod tests {
             explanation: Some("AES-256が代表例".to_string()),
         };
 
-        let value = serde_json::to_value(&question).expect("multiple_choice問題をシリアライズできること");
+        let value =
+            serde_json::to_value(&question).expect("multiple_choice問題をシリアライズできること");
 
         assert_eq!(value["type"], "multiple_choice");
         assert_eq!(value["id"], "network-001");
         assert_eq!(value["question"], "AESの鍵長として一般的なものはどれか");
         assert_eq!(value["answer"], "b");
-        assert_eq!(value["choices"].as_array().map(|choices| choices.len()), Some(2));
+        assert_eq!(
+            value["choices"].as_array().map(|choices| choices.len()),
+            Some(2)
+        );
     }
 }

@@ -4,7 +4,10 @@ use crate::db::Database;
 use crate::models::{Question, QuizPack, QuizPackSummary};
 
 #[tauri::command]
-pub fn import_quiz_pack(_file_path: String, _database: State<'_, Database>) -> Result<QuizPack, String> {
+pub fn import_quiz_pack(
+    _file_path: String,
+    _database: State<'_, Database>,
+) -> Result<QuizPack, String> {
     Err("Quiz pack import is not implemented yet.".to_string())
 }
 
@@ -24,6 +27,9 @@ pub fn delete_quiz_pack(_pack_id: String, _database: State<'_, Database>) -> Res
 }
 
 #[tauri::command]
-pub fn get_questions_by_pack(_pack_id: String, _database: State<'_, Database>) -> Result<Vec<Question>, String> {
+pub fn get_questions_by_pack(
+    _pack_id: String,
+    _database: State<'_, Database>,
+) -> Result<Vec<Question>, String> {
     Ok(Vec::new())
 }
