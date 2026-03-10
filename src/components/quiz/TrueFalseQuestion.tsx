@@ -10,10 +10,10 @@ export default function TrueFalseQuestion({ question }: Props) {
       <p className="text-lg font-medium text-slate-900">{question.question}</p>
       <div className="flex gap-3">
         <button className="rounded-2xl border border-slate-200 px-4 py-3" type="button">
-          True
+          ○
         </button>
         <button className="rounded-2xl border border-slate-200 px-4 py-3" type="button">
-          False
+          ×
         </button>
       </div>
     </div>

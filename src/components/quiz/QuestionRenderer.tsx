@@ -16,6 +16,6 @@ export default function QuestionRenderer({ question }: Props) {
     case 'text_input':
       return <TextInputQuestion question={question} />;
     default:
-      throw new Error(`Unknown question type: ${String(question satisfies never)}`);
+      throw new Error(`不明な問題タイプです: ${String(question satisfies never)}`);
   }
 }

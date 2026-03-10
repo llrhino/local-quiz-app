@@ -11,17 +11,17 @@ export default function Header() {
     <header className="border-b border-slate-200/80 bg-white/70 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-sky-700">
-            Offline Training
+          <p className="text-xs tracking-widest text-sky-700">
+            オフライン学習
           </p>
-          <h1 className="text-2xl font-semibold text-slate-950">Local Quiz App</h1>
+          <h1 className="text-2xl font-semibold text-slate-950">ローカルクイズアプリ</h1>
         </div>
         <nav className="flex items-center gap-2">
           <NavLink to="/" className={navLinkClassName} end>
-            Quiz Packs
+            クイズパック
           </NavLink>
           <NavLink to="/settings" className={navLinkClassName}>
-            Settings
+            設定
           </NavLink>
         </nav>
       </div>

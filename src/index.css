@@ -1,11 +1,24 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Meiryo",
+    "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Segoe UI", sans-serif;
+}
+
 :root {
   color: #111827;
   background:
     radial-gradient(circle at top, rgba(14, 165, 233, 0.16), transparent 30%),
     linear-gradient(180deg, #f8fafc 0%, #e2e8f0 100%);
-  font-family: "Segoe UI", sans-serif;
+  font-family:
+    "Noto Sans CJK JP",
+    "Noto Sans JP",
+    "Yu Gothic UI",
+    "Meiryo",
+    "Hiragino Sans",
+    "Hiragino Kaku Gothic ProN",
+    "Segoe UI",
+    sans-serif;
 }
 
 body {
