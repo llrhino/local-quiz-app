@@ -143,7 +143,7 @@ describe('QuizPage', () => {
   });
 
   describe('セッション完了', () => {
-    it('全問完了時にサマリーを表示する', () => {
+    it('全問完了時にサマリーと正答率を表示する', () => {
       setupSessionState({
         isCompleted: true,
         answers: ['b', 'true'],
@@ -152,6 +152,20 @@ describe('QuizPage', () => {
       renderQuizPage();
 
       expect(screen.getByText('クイズ完了')).toBeInTheDocument();
+      expect(screen.getByText('2問中2問正解')).toBeInTheDocument();
+      expect(screen.getByText('100.0%')).toBeInTheDocument();
+    });
+
+    it('回答一覧を表示する', () => {
+      setupSessionState({
+        isCompleted: true,
+        answers: ['b', 'true'],
+        currentIndex: 2,
+      });
+      renderQuizPage();
+
+      const listItems = screen.getAllByRole('listitem');
+      expect(listItems).toHaveLength(2);
     });
 
     it('「パック一覧に戻る」ボタンでホームに遷移する', async () => {

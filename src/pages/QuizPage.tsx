@@ -7,6 +7,7 @@ import Modal from '../components/common/Modal';
 import QuestionRenderer from '../components/quiz/QuestionRenderer';
 import QuizProgress from '../components/quiz/QuizProgress';
 import QuizResult from '../components/quiz/QuizResult';
+import QuizSummary from '../components/quiz/QuizSummary';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { useQuizSessionActions } from '../hooks/useQuizSessionActions';
 
@@ -19,7 +20,7 @@ export default function QuizPage() {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
   const { startQuiz, submitAndSave } = useQuizSessionActions();
-  const { questions, currentIndex, isCompleted, resetSession, nextQuestion } =
+  const { questions, currentIndex, answers, isCompleted, resetSession, nextQuestion } =
     useQuizSession();
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
@@ -66,16 +67,12 @@ export default function QuizPage() {
   // セッション完了画面
   if (isCompleted) {
     return (
-      <Card>
-        <h2 className="text-2xl font-semibold text-slate-950">クイズ完了</h2>
-        <p className="mt-2 text-slate-600">
-          全 {questions.length} 問を終了しました。
-        </p>
-        <div className="mt-4 flex gap-3">
-          <Button onClick={handleGoHome}>パック一覧に戻る</Button>
-          <Button onClick={handleRetry}>もう一度挑戦する</Button>
-        </div>
-      </Card>
+      <QuizSummary
+        questions={questions}
+        answers={answers}
+        onGoHome={handleGoHome}
+        onRetry={handleRetry}
+      />
     );
   }
 
