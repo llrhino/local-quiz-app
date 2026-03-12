@@ -1,14 +1,59 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
-import { listQuizPacks } from '../lib/commands';
+import {
+  listQuizPacks,
+  importQuizPack,
+  deleteQuizPack,
+  openFileDialog,
+} from '../lib/commands';
 import type { QuizPackSummary } from '../lib/types';
 
 export function useQuizPacks() {
   const [packs, setPacks] = useState<QuizPackSummary[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [importing, setImporting] = useState(false);
 
-  useEffect(() => {
-    void listQuizPacks().then(setPacks).catch(() => setPacks([]));
+  const refresh = useCallback(async () => {
+    try {
+      const data = await listQuizPacks();
+      setPacks(data);
+      setError(null);
+    } catch {
+      setPacks([]);
+      setError('パック一覧の取得に失敗しました');
+    }
   }, []);
 
-  return packs;
+  useEffect(() => {
+    void refresh().finally(() => setLoading(false));
+  }, [refresh]);
+
+  const importPack = useCallback(async (): Promise<string | null> => {
+    const filePath = await openFileDialog();
+    if (!filePath) return null;
+
+    setImporting(true);
+    try {
+      await importQuizPack(filePath);
+      await refresh();
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : 'インポートに失敗しました';
+    } finally {
+      setImporting(false);
+    }
+  }, [refresh]);
+
+  const deletePack = useCallback(async (packId: string): Promise<string | null> => {
+    try {
+      await deleteQuizPack(packId);
+      await refresh();
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : '削除に失敗しました';
+    }
+  }, [refresh]);
+
+  return { packs, loading, error, importing, refresh, importPack, deletePack };
 }

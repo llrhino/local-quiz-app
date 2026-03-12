@@ -34,8 +34,8 @@ describe('App', () => {
       screen.getByRole('link', { name: '設定' }),
     ).toHaveAttribute('href', '/settings');
     expect(
-      screen.getByRole('button', { name: 'クイズパックを読み込む' }),
-    ).toBeDisabled();
+      screen.getByRole('button', { name: 'インポート' }),
+    ).toBeInTheDocument();
   });
 
   it('主要ページの見出しを日本語で表示する', () => {
