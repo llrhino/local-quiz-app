@@ -8,7 +8,7 @@ import { useQuizPacks } from '../hooks/useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
 
 export default function HomePage() {
-  const { packs, loading, error, importing, importPack, deletePack } = useQuizPacks();
+  const { packs, loading, error, importing, importPack, seedSample, deletePack } = useQuizPacks();
   const [notification, setNotification] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QuizPackSummary | null>(null);
 
@@ -61,9 +61,20 @@ export default function HomePage() {
       )}
 
       {!loading && !error && packs.length === 0 && (
-        <p className="text-center text-slate-500 dark:text-slate-400">
-          クイズパックがまだありません。JSONファイルをインポートしてください。
-        </p>
+        <Card className="space-y-4 text-center">
+          <p className="text-slate-500 dark:text-slate-400">
+            クイズパックがまだありません。JSONファイルをインポートしてください。
+          </p>
+          <Button
+            onClick={async () => {
+              setNotification(null);
+              const err = await seedSample();
+              if (err) setNotification(err);
+            }}
+          >
+            サンプルを試す
+          </Button>
+        </Card>
       )}
 
       {packs.map((pack) => (

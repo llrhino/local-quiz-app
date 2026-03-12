@@ -6,6 +6,7 @@ vi.mock('../lib/commands', () => ({
   importQuizPack: vi.fn(),
   deleteQuizPack: vi.fn(),
   openFileDialog: vi.fn(),
+  seedSamplePack: vi.fn(),
 }));
 
 import {
@@ -13,6 +14,7 @@ import {
   importQuizPack,
   deleteQuizPack,
   openFileDialog,
+  seedSamplePack,
 } from '../lib/commands';
 import { useQuizPacks } from './useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
@@ -21,6 +23,7 @@ const mockListQuizPacks = vi.mocked(listQuizPacks);
 const mockImportQuizPack = vi.mocked(importQuizPack);
 const mockDeleteQuizPack = vi.mocked(deleteQuizPack);
 const mockOpenFileDialog = vi.mocked(openFileDialog);
+const mockSeedSamplePack = vi.mocked(seedSamplePack);
 
 const pack1: QuizPackSummary = {
   id: 'pack-1',
@@ -228,6 +231,52 @@ describe('useQuizPacks', () => {
 
       expect(errorMsg).toBe('ダイアログを開けません');
       expect(result.current.importing).toBe(false);
+    });
+  });
+
+  describe('seedSample', () => {
+    it('サンプルパックを読み込んで一覧を更新する', async () => {
+      mockSeedSamplePack.mockResolvedValue({
+        id: 'sample-pack',
+        name: 'サンプル',
+        importedAt: '',
+        questions: [],
+      });
+      const samplePack: QuizPackSummary = {
+        id: 'sample-pack',
+        name: 'サンプル',
+        questionCount: 10,
+        importedAt: '',
+        lastStudiedAt: null,
+      };
+      mockListQuizPacks
+        .mockResolvedValueOnce([pack1, pack2])
+        .mockResolvedValueOnce([pack1, pack2, samplePack]);
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.seedSample();
+      });
+
+      expect(mockSeedSamplePack).toHaveBeenCalledOnce();
+      expect(errorMsg).toBeNull();
+    });
+
+    it('既にサンプルがある場合はエラーメッセージを返す', async () => {
+      mockSeedSamplePack.mockRejectedValue(new Error("パックID 'sample-security-basics' は既にインポートされています"));
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.seedSample();
+      });
+
+      expect(errorMsg).toBe("パックID 'sample-security-basics' は既にインポートされています");
     });
   });
 

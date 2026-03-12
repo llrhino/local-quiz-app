@@ -7,6 +7,8 @@ use crate::models::{Question, QuizPack, QuizPackSummary};
 use crate::repositories::{question_repo, quiz_pack_repo};
 use crate::services::import_service;
 
+const SAMPLE_PACK_JSON: &str = include_str!("../../resources/sample-quiz-pack.json");
+
 #[tauri::command]
 pub fn import_quiz_pack(
     file_path: String,
@@ -49,6 +51,16 @@ pub fn delete_quiz_pack(pack_id: String, database: State<'_, Database>) -> Resul
         .with_connection(|connection| {
             quiz_pack_repo::delete_quiz_pack(connection, &pack_id)?;
             Ok(())
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn seed_sample_pack(database: State<'_, Database>) -> Result<QuizPack, String> {
+    database
+        .with_connection(|connection| {
+            let pack = import_service::import_quiz_pack_from_str(SAMPLE_PACK_JSON, connection)?;
+            Ok(pack)
         })
         .map_err(|e| e.to_string())
 }

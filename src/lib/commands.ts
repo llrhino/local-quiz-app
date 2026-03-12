@@ -41,4 +41,6 @@ export const getSettings = () => invoke<AppSettings>('get_settings');
 export const updateSetting = (key: string, value: string) =>
   invoke<void>('update_setting', { key, value });
 
+export const seedSamplePack = () => invoke<QuizPack>('seed_sample_pack');
+
 export const openFileDialog = () => invoke<string | null>('open_file_dialog');

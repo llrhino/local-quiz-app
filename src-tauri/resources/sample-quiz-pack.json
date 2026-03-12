@@ -1,0 +1,103 @@
+{
+  "pack": {
+    "id": "sample-security-basics",
+    "name": "情報セキュリティ基礎（サンプル）",
+    "description": "情報セキュリティに関する基礎知識を問うサンプルクイズパックです。3種類の問題形式（選択式・○×・テキスト入力）を含みます。"
+  },
+  "questions": [
+    {
+      "id": "q-001",
+      "type": "multiple_choice",
+      "question": "AESの鍵長として正しくないものはどれか？",
+      "choices": [
+        { "id": "a", "text": "128ビット" },
+        { "id": "b", "text": "192ビット" },
+        { "id": "c", "text": "256ビット" },
+        { "id": "d", "text": "512ビット" }
+      ],
+      "answer": "d",
+      "explanation": "AESの鍵長は128, 192, 256ビットの3種類です。512ビットは規格に存在しません。"
+    },
+    {
+      "id": "q-002",
+      "type": "true_false",
+      "question": "多要素認証は、同じ種類の認証要素を複数組み合わせることである。",
+      "answer": false,
+      "explanation": "多要素認証は「知識」「所持」「生体」など、異なる種類の認証要素を組み合わせるものです。"
+    },
+    {
+      "id": "q-003",
+      "type": "text_input",
+      "question": "公開鍵暗号方式の代表的なアルゴリズムで、3人の開発者の頭文字からなるものは何か？（アルファベット3文字）",
+      "answer": "RSA",
+      "explanation": "Rivest, Shamir, Adlemanの3名によって開発されました。"
+    },
+    {
+      "id": "q-004",
+      "type": "multiple_choice",
+      "question": "HTTPSで使用されるデフォルトのポート番号は？",
+      "choices": [
+        { "id": "a", "text": "80" },
+        { "id": "b", "text": "443" },
+        { "id": "c", "text": "8080" },
+        { "id": "d", "text": "22" }
+      ],
+      "answer": "b",
+      "explanation": "HTTPSのデフォルトポートは443番です。HTTPは80番、SSHは22番です。"
+    },
+    {
+      "id": "q-005",
+      "type": "true_false",
+      "question": "ファイアウォールは、ウイルスに感染したファイルを自動的に駆除する機能を持つ。",
+      "answer": false,
+      "explanation": "ファイアウォールはネットワーク通信のフィルタリングを行います。ウイルス駆除はアンチウイルスソフトの機能です。"
+    },
+    {
+      "id": "q-006",
+      "type": "multiple_choice",
+      "question": "SQLインジェクション攻撃の主な対策として最も適切なものは？",
+      "choices": [
+        { "id": "a", "text": "パスワードの定期変更" },
+        { "id": "b", "text": "プリペアドステートメントの使用" },
+        { "id": "c", "text": "ファイアウォールの導入" },
+        { "id": "d", "text": "データのバックアップ" }
+      ],
+      "answer": "b",
+      "explanation": "プリペアドステートメント（パラメータ化クエリ）を使用することで、SQL文とパラメータが分離され、インジェクションを防止できます。"
+    },
+    {
+      "id": "q-007",
+      "type": "text_input",
+      "question": "Webアプリケーションのセキュリティリスクをまとめたプロジェクトで、「Open Web Application Security Project」の略称は？（アルファベット4文字）",
+      "answer": "OWASP",
+      "explanation": "OWASP（Open Web Application Security Project）は、Webアプリケーションセキュリティの改善を目的とした国際的なコミュニティです。"
+    },
+    {
+      "id": "q-008",
+      "type": "true_false",
+      "question": "公開鍵暗号方式では、暗号化と復号に同じ鍵を使用する。",
+      "answer": false,
+      "explanation": "公開鍵暗号方式では、暗号化に公開鍵、復号に秘密鍵を使用します。同じ鍵を使うのは共通鍵暗号方式です。"
+    },
+    {
+      "id": "q-009",
+      "type": "multiple_choice",
+      "question": "パスワードのハッシュ化に推奨されるアルゴリズムは？",
+      "choices": [
+        { "id": "a", "text": "MD5" },
+        { "id": "b", "text": "SHA-1" },
+        { "id": "c", "text": "bcrypt" },
+        { "id": "d", "text": "Base64" }
+      ],
+      "answer": "c",
+      "explanation": "bcryptはパスワードハッシュ用に設計されたアルゴリズムです。MD5やSHA-1は脆弱性が発見されており、Base64はエンコーディングであってハッシュではありません。"
+    },
+    {
+      "id": "q-010",
+      "type": "text_input",
+      "question": "ネットワーク上の通信を暗号化するプロトコルで、「Transport Layer Security」の略称は？（アルファベット3文字）",
+      "answer": "TLS",
+      "explanation": "TLS（Transport Layer Security）は、インターネット上の通信を暗号化するプロトコルです。SSLの後継にあたります。"
+    }
+  ]
+}

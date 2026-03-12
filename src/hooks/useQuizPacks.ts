@@ -5,6 +5,7 @@ import {
   importQuizPack,
   deleteQuizPack,
   openFileDialog,
+  seedSamplePack,
 } from '../lib/commands';
 import type { QuizPackSummary } from '../lib/types';
 
@@ -45,6 +46,16 @@ export function useQuizPacks() {
     }
   }, [refresh]);
 
+  const seedSample = useCallback(async (): Promise<string | null> => {
+    try {
+      await seedSamplePack();
+      await refresh();
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : 'サンプルパックの読み込みに失敗しました';
+    }
+  }, [refresh]);
+
   const deletePack = useCallback(async (packId: string): Promise<string | null> => {
     try {
       await deleteQuizPack(packId);
@@ -55,5 +66,5 @@ export function useQuizPacks() {
     }
   }, [refresh]);
 
-  return { packs, loading, error, importing, refresh, importPack, deletePack };
+  return { packs, loading, error, importing, refresh, importPack, seedSample, deletePack };
 }

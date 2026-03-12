@@ -198,15 +198,12 @@ fn validate_text_input(value: &serde_json::Value, question_id: &str, errors: &mu
     }
 }
 
-/// クイズパックをインポートする（メイン関数）
-pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack, String> {
-    // 1. ファイル読み込み
-    let content = read_file(path)?;
+/// JSON文字列をパースしてDBに保存する内部関数
+fn import_from_content(content: &str, connection: &Connection) -> Result<QuizPack, String> {
+    // 1. JSONパース
+    let raw = parse_json(content)?;
 
-    // 2. JSONパース
-    let raw = parse_json(&content)?;
-
-    // 3. パックID一意性チェック
+    // 2. パックID一意性チェック
     let existing = quiz_pack_repo::get_quiz_pack(connection, &raw.pack.id)
         .map_err(|e| format!("DB検索に失敗しました: {e}"))?;
     if existing.is_some() {
@@ -216,10 +213,10 @@ pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack
         ));
     }
 
-    // 4. 問題バリデーション
+    // 3. 問題バリデーション
     let questions = validate_questions(&raw.questions)?;
 
-    // 5. QuizPack を組み立て
+    // 4. QuizPack を組み立て
     let now = chrono::Utc::now().to_rfc3339();
     let pack = QuizPack {
         id: raw.pack.id,
@@ -229,7 +226,7 @@ pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack
         questions,
     };
 
-    // 6. トランザクション内でDB保存
+    // 5. トランザクション内でDB保存
     let tx = connection
         .unchecked_transaction()
         .map_err(|e| format!("トランザクション開始に失敗しました: {e}"))?;
@@ -243,6 +240,17 @@ pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack
         .map_err(|e| format!("コミットに失敗しました: {e}"))?;
 
     Ok(pack)
+}
+
+/// ファイルパスからクイズパックをインポートする
+pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack, String> {
+    let content = read_file(path)?;
+    import_from_content(&content, connection)
+}
+
+/// JSON文字列からクイズパックをインポートする
+pub fn import_quiz_pack_from_str(json: &str, connection: &Connection) -> Result<QuizPack, String> {
+    import_from_content(json, connection)
 }
 
 #[cfg(test)]
@@ -658,6 +666,30 @@ mod tests {
 
         let result = import_quiz_pack(file.path(), &connection);
         assert!(result.is_ok());
+    }
+
+    // --- import_quiz_pack_from_str ---
+
+    #[test]
+    fn json文字列から直接インポートできる() {
+        let connection = open_test_connection();
+        let result = import_quiz_pack_from_str(valid_json(), &connection);
+        assert!(result.is_ok(), "JSON文字列からインポートが成功すること");
+
+        let pack = result.unwrap();
+        assert_eq!(pack.id, "test-pack");
+        assert_eq!(pack.name, "テストパック");
+        assert_eq!(pack.questions.len(), 3);
+    }
+
+    #[test]
+    fn json文字列からの重複インポートはエラーを返す() {
+        let connection = open_test_connection();
+        let _ = import_quiz_pack_from_str(valid_json(), &connection);
+
+        let result = import_quiz_pack_from_str(valid_json(), &connection);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("既にインポートされています"));
     }
 
     #[test]

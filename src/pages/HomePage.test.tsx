@@ -7,6 +7,7 @@ import type { QuizPackSummary } from '../lib/types';
 
 // useQuizPacks のモック
 const mockImportPack = vi.fn();
+const mockSeedSample = vi.fn();
 const mockDeletePack = vi.fn();
 const mockRefresh = vi.fn();
 
@@ -57,6 +58,7 @@ describe('HomePage', () => {
       importing: false,
       refresh: mockRefresh,
       importPack: mockImportPack,
+      seedSample: mockSeedSample,
       deletePack: mockDeletePack,
     });
   });
@@ -102,7 +104,7 @@ describe('HomePage', () => {
   });
 
   describe('空状態', () => {
-    it('パックがない場合は案内メッセージを表示する', () => {
+    beforeEach(() => {
       mockUseQuizPacks.mockReturnValue({
         packs: [],
         loading: false,
@@ -110,12 +112,30 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        seedSample: mockSeedSample,
         deletePack: mockDeletePack,
       });
+    });
+
+    it('パックがない場合は案内メッセージを表示する', () => {
       renderHomePage();
       expect(
         screen.getByText('クイズパックがまだありません。JSONファイルをインポートしてください。'),
       ).toBeInTheDocument();
+    });
+
+    it('サンプルを試すボタンが表示される', () => {
+      renderHomePage();
+      expect(screen.getByRole('button', { name: 'サンプルを試す' })).toBeInTheDocument();
+    });
+
+    it('サンプルを試すボタンをクリックすると seedSample が呼ばれる', async () => {
+      mockSeedSample.mockResolvedValue(null);
+      const user = userEvent.setup();
+      renderHomePage();
+
+      await user.click(screen.getByRole('button', { name: 'サンプルを試す' }));
+      expect(mockSeedSample).toHaveBeenCalledOnce();
     });
   });
 
