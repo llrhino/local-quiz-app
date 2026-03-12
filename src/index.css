@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic UI", "Meiryo",
     "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Segoe UI", sans-serif;
@@ -35,4 +37,11 @@ a {
 button,
 input {
   font: inherit;
+}
+
+.dark {
+  color: #e2e8f0;
+  background:
+    radial-gradient(circle at top, rgba(14, 165, 233, 0.08), transparent 30%),
+    linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
 }

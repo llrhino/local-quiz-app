@@ -1,8 +1,10 @@
 import { Outlet } from 'react-router-dom';
 
+import { useTheme } from '../../hooks/useTheme';
 import Header from './Header';
 
 export default function Layout() {
+  useTheme();
   return (
     <div className="min-h-screen">
       <Header />
