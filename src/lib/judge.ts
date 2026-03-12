@@ -10,9 +10,13 @@ const judgeStrategies: Record<QuestionType, JudgeFunction> = {
 };
 
 export function judgeAnswer(
-  questionType: QuestionType,
+  questionType: string,
   userAnswer: string,
   correctAnswer: string,
 ): boolean {
-  return judgeStrategies[questionType](userAnswer, correctAnswer);
+  const strategy = judgeStrategies[questionType as QuestionType];
+  if (!strategy) {
+    throw new Error(`Unknown question type: ${questionType}`);
+  }
+  return strategy(userAnswer, correctAnswer);
 }
