@@ -2,40 +2,56 @@ use tauri::State;
 
 use crate::db::Database;
 use crate::models::{AnswerRecord, PackStatistics, WeakQuestion};
+use crate::services::history_service;
 
 #[tauri::command]
 pub fn save_answer_record(
-    _record: AnswerRecord,
-    _database: State<'_, Database>,
+    record: AnswerRecord,
+    database: State<'_, Database>,
 ) -> Result<(), String> {
-    Ok(())
+    database
+        .with_connection(|connection| {
+            history_service::save_answer_record(connection, &record)?;
+            Ok(())
+        })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_learning_history(
-    _pack_id: String,
-    _database: State<'_, Database>,
+    pack_id: String,
+    database: State<'_, Database>,
 ) -> Result<Vec<AnswerRecord>, String> {
-    Ok(Vec::new())
+    database
+        .with_connection(|connection| {
+            let history = history_service::get_learning_history(connection, &pack_id)?;
+            Ok(history)
+        })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_pack_statistics(
     pack_id: String,
-    _database: State<'_, Database>,
+    database: State<'_, Database>,
 ) -> Result<PackStatistics, String> {
-    Ok(PackStatistics {
-        pack_id,
-        total_answers: 0,
-        correct_answers: 0,
-        accuracy_rate: 0.0,
-    })
+    database
+        .with_connection(|connection| {
+            let stats = history_service::get_pack_statistics(connection, &pack_id)?;
+            Ok(stats)
+        })
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub fn get_weak_questions(
-    _pack_id: String,
-    _database: State<'_, Database>,
+    pack_id: String,
+    database: State<'_, Database>,
 ) -> Result<Vec<WeakQuestion>, String> {
-    Ok(Vec::new())
+    database
+        .with_connection(|connection| {
+            let weak = history_service::get_weak_questions(connection, &pack_id)?;
+            Ok(weak)
+        })
+        .map_err(|e| e.to_string())
 }
