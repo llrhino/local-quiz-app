@@ -30,11 +30,11 @@ export function useQuizPacks() {
   }, [refresh]);
 
   const importPack = useCallback(async (): Promise<string | null> => {
-    const filePath = await openFileDialog();
-    if (!filePath) return null;
-
     setImporting(true);
     try {
+      const filePath = await openFileDialog();
+      if (!filePath) return null;
+
       await importQuizPack(filePath);
       await refresh();
       return null;

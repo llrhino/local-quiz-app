@@ -171,11 +171,10 @@ describe('useQuizPacks', () => {
       expect(errorMsg).toBeNull();
     });
 
-    it('インポート中は importing が true になる', async () => {
-      let resolveImport: (v: unknown) => void;
-      mockOpenFileDialog.mockResolvedValue('/path/to/quiz.json');
-      mockImportQuizPack.mockImplementation(
-        () => new Promise((resolve) => { resolveImport = resolve; })
+    it('ダイアログ表示中から importing が true になる', async () => {
+      let resolveDialog: (v: string | null) => void;
+      mockOpenFileDialog.mockImplementation(
+        () => new Promise((resolve) => { resolveDialog = resolve; })
       );
 
       const { result } = renderHook(() => useQuizPacks());
@@ -186,15 +185,48 @@ describe('useQuizPacks', () => {
         importPromise = result.current.importPack();
       });
 
+      // ダイアログ表示中に importing が true
       await waitFor(() => {
         expect(result.current.importing).toBe(true);
       });
 
+      mockImportQuizPack.mockResolvedValue({
+        id: 'pack-3', name: '新パック', importedAt: '', questions: [],
+      });
+
       await act(async () => {
-        resolveImport!({ id: 'pack-3', name: '新パック', importedAt: '', questions: [] });
+        resolveDialog!('/path/to/quiz.json');
         await importPromise;
       });
 
+      expect(result.current.importing).toBe(false);
+    });
+
+    it('ダイアログでキャンセルした場合 importing が false に戻る', async () => {
+      mockOpenFileDialog.mockResolvedValue(null);
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.importPack();
+      });
+
+      expect(result.current.importing).toBe(false);
+    });
+
+    it('ファイルダイアログがエラーの場合にエラーメッセージを返す', async () => {
+      mockOpenFileDialog.mockRejectedValue(new Error('ダイアログを開けません'));
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.importPack();
+      });
+
+      expect(errorMsg).toBe('ダイアログを開けません');
       expect(result.current.importing).toBe(false);
     });
   });
