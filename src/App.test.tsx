@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { cleanup, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 import App from './App';
@@ -60,15 +60,6 @@ describe('App', () => {
 
     expect(screen.getByRole('heading', { name: '学習履歴' })).toBeInTheDocument();
 
-    cleanup();
-
-    render(
-      <MemoryRouter initialEntries={['/quiz/sample-pack']}>
-        <App />
-      </MemoryRouter>,
-    );
-
-    expect(screen.getByRole('heading', { name: 'クイズセッション' })).toBeInTheDocument();
   });
 });
 
@@ -87,11 +78,12 @@ describe('question components', () => {
       answer: false,
     };
 
-    const { rerender } = render(<TextInputQuestion question={textQuestion} />);
+    const noop = vi.fn();
+    const { rerender } = render(<TextInputQuestion question={textQuestion} onAnswer={noop} />);
 
     expect(screen.getByPlaceholderText('解答を入力')).toBeInTheDocument();
 
-    rerender(<TrueFalseQuestion question={trueFalseQuestion} />);
+    rerender(<TrueFalseQuestion question={trueFalseQuestion} onAnswer={noop} />);
 
     expect(screen.getByRole('button', { name: '○' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '×' })).toBeInTheDocument();

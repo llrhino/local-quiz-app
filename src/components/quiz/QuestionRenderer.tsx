@@ -5,16 +5,40 @@ import TrueFalseQuestion from './TrueFalseQuestion';
 
 type Props = {
   question: Question;
+  onAnswer: (answer: string) => void;
+  disabled?: boolean;
 };
 
-export default function QuestionRenderer({ question }: Props) {
+export default function QuestionRenderer({
+  question,
+  onAnswer,
+  disabled,
+}: Props) {
   switch (question.type) {
     case 'multiple_choice':
-      return <MultipleChoiceQuestion question={question} />;
+      return (
+        <MultipleChoiceQuestion
+          question={question}
+          onAnswer={onAnswer}
+          disabled={disabled}
+        />
+      );
     case 'true_false':
-      return <TrueFalseQuestion question={question} />;
+      return (
+        <TrueFalseQuestion
+          question={question}
+          onAnswer={onAnswer}
+          disabled={disabled}
+        />
+      );
     case 'text_input':
-      return <TextInputQuestion question={question} />;
+      return (
+        <TextInputQuestion
+          question={question}
+          onAnswer={onAnswer}
+          disabled={disabled}
+        />
+      );
     default:
       throw new Error(`不明な問題タイプです: ${String(question satisfies never)}`);
   }
