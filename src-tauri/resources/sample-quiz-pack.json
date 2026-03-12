@@ -68,7 +68,7 @@
     {
       "id": "q-007",
       "type": "text_input",
-      "question": "Webアプリケーションのセキュリティリスクをまとめたプロジェクトで、「Open Web Application Security Project」の略称は？（アルファベット4文字）",
+      "question": "Webアプリケーションのセキュリティリスクをまとめたプロジェクトで、「Open Web Application Security Project」の略称は？（アルファベット5文字）",
       "answer": "OWASP",
       "explanation": "OWASP（Open Web Application Security Project）は、Webアプリケーションセキュリティの改善を目的とした国際的なコミュニティです。"
     },
