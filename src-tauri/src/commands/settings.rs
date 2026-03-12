@@ -30,12 +30,18 @@ pub fn update_setting(
 }
 
 #[tauri::command]
-pub fn open_file_dialog(app: AppHandle) -> Option<String> {
-    let file = app
-        .dialog()
+pub async fn open_file_dialog(app: AppHandle) -> Option<String> {
+    let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
+
+    app.dialog()
         .file()
         .add_filter("JSON ファイル", &["json"])
-        .blocking_pick_file();
+        .pick_file(move |file| {
+            let _ = tx.send(file.map(|path| path.to_string()));
+        });
 
-    file.map(|path| path.to_string())
+    // ブロッキング recv を別スレッドで実行し、コマンドスレッドをブロックしない
+    tauri::async_runtime::spawn_blocking(move || rx.recv().unwrap_or(None))
+        .await
+        .unwrap_or(None)
 }
