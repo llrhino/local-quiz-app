@@ -10,10 +10,13 @@ pub fn get_settings(connection: &Connection) -> RepoResult<AppSettings> {
     let question_order = get_setting_value(connection, "question_order")?
         .unwrap_or_else(|| "sequential".to_string());
     let theme = get_setting_value(connection, "theme")?.unwrap_or_else(|| "light".to_string());
+    let shuffle_choices = get_setting_value(connection, "shuffle_choices")?
+        .unwrap_or_else(|| "false".to_string());
 
     Ok(AppSettings {
         question_order,
         theme,
+        shuffle_choices,
     })
 }
 

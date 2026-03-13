@@ -102,6 +102,7 @@ pub(crate) mod test_helpers {
         AppSettings {
             question_order: "sequential".to_string(),
             theme: "light".to_string(),
+            shuffle_choices: "false".to_string(),
         }
     }
 }

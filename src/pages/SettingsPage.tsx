@@ -7,8 +7,10 @@ import { useAppSettingsStore } from '../stores/appSettingsStore';
 export default function SettingsPage() {
   const questionOrder = useAppSettingsStore((s) => s.questionOrder);
   const theme = useAppSettingsStore((s) => s.theme);
+  const shuffleChoices = useAppSettingsStore((s) => s.shuffleChoices);
   const setQuestionOrder = useAppSettingsStore((s) => s.setQuestionOrder);
   const setTheme = useAppSettingsStore((s) => s.setTheme);
+  const setShuffleChoices = useAppSettingsStore((s) => s.setShuffleChoices);
 
   const handleQuestionOrderChange = async (value: 'sequential' | 'random') => {
     await updateSetting('question_order', value);
@@ -18,6 +20,11 @@ export default function SettingsPage() {
   const handleThemeChange = async (value: 'light' | 'dark') => {
     await updateSetting('theme', value);
     setTheme(value);
+  };
+
+  const handleShuffleChoicesChange = async (checked: boolean) => {
+    await updateSetting('shuffle_choices', String(checked));
+    setShuffleChoices(checked);
   };
 
   return (
@@ -67,6 +74,20 @@ export default function SettingsPage() {
             ランダム
           </label>
         </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+          選択肢の表示
+        </h3>
+        <label className="flex items-center gap-2 text-slate-700 dark:text-slate-300">
+          <input
+            type="checkbox"
+            checked={shuffleChoices}
+            onChange={(e) => handleShuffleChoicesChange(e.target.checked)}
+          />
+          選択肢をランダムに並べ替える
+        </label>
       </Card>
 
       <Card className="space-y-4">

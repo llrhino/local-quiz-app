@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 pub struct AppSettings {
     pub question_order: String,
     pub theme: String,
+    pub shuffle_choices: String,
 }
 
 impl Default for AppSettings {
@@ -12,6 +13,7 @@ impl Default for AppSettings {
         Self {
             question_order: "sequential".to_string(),
             theme: "light".to_string(),
+            shuffle_choices: "false".to_string(),
         }
     }
 }

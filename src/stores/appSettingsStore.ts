@@ -7,8 +7,10 @@ export type Theme = 'light' | 'dark';
 type AppSettingsState = {
   questionOrder: 'sequential' | 'random';
   theme: Theme;
+  shuffleChoices: boolean;
   setQuestionOrder: (questionOrder: 'sequential' | 'random') => void;
   setTheme: (theme: Theme) => void;
+  setShuffleChoices: (shuffleChoices: boolean) => void;
   loadSettings: () => Promise<void>;
   saveSetting: (key: string, value: string) => Promise<void>;
 };
@@ -16,8 +18,10 @@ type AppSettingsState = {
 export const useAppSettingsStore = create<AppSettingsState>((set) => ({
   questionOrder: 'sequential',
   theme: 'light',
+  shuffleChoices: false,
   setQuestionOrder: (questionOrder) => set({ questionOrder }),
   setTheme: (theme) => set({ theme }),
+  setShuffleChoices: (shuffleChoices) => set({ shuffleChoices }),
 
   loadSettings: async () => {
     try {
@@ -25,6 +29,7 @@ export const useAppSettingsStore = create<AppSettingsState>((set) => ({
       set({
         questionOrder: settings.questionOrder,
         theme: settings.theme,
+        shuffleChoices: settings.shuffleChoices,
       });
     } catch {
       // 読み込み失敗時はデフォルト値を維持

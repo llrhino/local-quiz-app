@@ -75,4 +75,5 @@ export type WeakQuestion = {
 export type AppSettings = {
   questionOrder: 'sequential' | 'random';
   theme: 'light' | 'dark';
+  shuffleChoices: boolean;
 };

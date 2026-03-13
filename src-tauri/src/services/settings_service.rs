@@ -37,9 +37,17 @@ fn validate_setting(key: &str, value: &str) -> Result<(), Box<dyn std::error::Er
                 .into());
             }
         }
+        "shuffle_choices" => {
+            if !matches!(value, "true" | "false") {
+                return Err(format!(
+                    "shuffle_choices の値が不正です: '{value}'（true または false を指定してください）"
+                )
+                .into());
+            }
+        }
         _ => {
             return Err(
-                format!("不明な設定キーです: '{key}'（question_order または theme を指定してください）")
+                format!("不明な設定キーです: '{key}'（question_order, theme, shuffle_choices を指定してください）")
                     .into(),
             );
         }
@@ -128,6 +136,44 @@ mod tests {
         let err = result.unwrap_err().to_string();
         assert!(
             err.contains("blue"),
+            "エラーメッセージに不正な値が含まれること: {err}"
+        );
+    }
+
+    // --- shuffle_choices ---
+
+    #[test]
+    fn returns_default_shuffle_choices_as_false() {
+        let conn = open_test_connection();
+        let settings = get_settings(&conn).unwrap();
+        assert_eq!(settings.shuffle_choices, "false");
+    }
+
+    #[test]
+    fn updates_shuffle_choices_to_true() {
+        let conn = open_test_connection();
+        update_setting(&conn, "shuffle_choices", "true").unwrap();
+        let settings = get_settings(&conn).unwrap();
+        assert_eq!(settings.shuffle_choices, "true");
+    }
+
+    #[test]
+    fn updates_shuffle_choices_to_false() {
+        let conn = open_test_connection();
+        update_setting(&conn, "shuffle_choices", "true").unwrap();
+        update_setting(&conn, "shuffle_choices", "false").unwrap();
+        let settings = get_settings(&conn).unwrap();
+        assert_eq!(settings.shuffle_choices, "false");
+    }
+
+    #[test]
+    fn rejects_invalid_value_for_shuffle_choices() {
+        let conn = open_test_connection();
+        let result = update_setting(&conn, "shuffle_choices", "yes");
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("yes"),
             "エラーメッセージに不正な値が含まれること: {err}"
         );
     }

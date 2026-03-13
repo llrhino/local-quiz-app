@@ -32,6 +32,7 @@ describe('SettingsPage', () => {
     useAppSettingsStore.setState({
       questionOrder: 'sequential',
       theme: 'light',
+      shuffleChoices: false,
     });
   });
 
@@ -111,6 +112,45 @@ describe('SettingsPage', () => {
       await user.click(darkRadio);
 
       expect(useAppSettingsStore.getState().theme).toBe('dark');
+    });
+  });
+
+  describe('選択肢シャッフルの設定', () => {
+    it('デフォルトでチェックボックスがオフになっている', () => {
+      renderSettingsPage();
+      const checkbox = screen.getByRole('checkbox', { name: '選択肢をランダムに並べ替える' });
+      expect(checkbox).not.toBeChecked();
+    });
+
+    it('チェックボックスをオンにするとバックエンドに保存される', async () => {
+      const user = userEvent.setup();
+      renderSettingsPage();
+
+      const checkbox = screen.getByRole('checkbox', { name: '選択肢をランダムに並べ替える' });
+      await user.click(checkbox);
+
+      expect(mockUpdateSetting).toHaveBeenCalledWith('shuffle_choices', 'true');
+    });
+
+    it('チェックボックスをオフに戻すとバックエンドに保存される', async () => {
+      useAppSettingsStore.setState({ shuffleChoices: true });
+      const user = userEvent.setup();
+      renderSettingsPage();
+
+      const checkbox = screen.getByRole('checkbox', { name: '選択肢をランダムに並べ替える' });
+      await user.click(checkbox);
+
+      expect(mockUpdateSetting).toHaveBeenCalledWith('shuffle_choices', 'false');
+    });
+
+    it('変更後にストアの値が更新される', async () => {
+      const user = userEvent.setup();
+      renderSettingsPage();
+
+      const checkbox = screen.getByRole('checkbox', { name: '選択肢をランダムに並べ替える' });
+      await user.click(checkbox);
+
+      expect(useAppSettingsStore.getState().shuffleChoices).toBe(true);
     });
   });
 });
