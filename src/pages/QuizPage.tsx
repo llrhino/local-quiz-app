@@ -80,7 +80,7 @@ export default function QuizPage() {
   if (!currentQuestion) {
     return (
       <Card>
-        <p className="text-slate-600">読み込み中...</p>
+        <p className="text-slate-600 dark:text-slate-400">読み込み中...</p>
       </Card>
     );
   }
@@ -90,7 +90,7 @@ export default function QuizPage() {
       <div className="flex items-center justify-between">
         <QuizProgress current={currentIndex + 1} total={questions.length} />
         <button
-          className="text-sm text-slate-500 hover:text-slate-700"
+          className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           onClick={() => setShowAbortDialog(true)}
           type="button"
         >
@@ -123,12 +123,12 @@ export default function QuizPage() {
         title="中断の確認"
         onClose={() => setShowAbortDialog(false)}
       >
-        <p className="mt-2 text-slate-600">
+        <p className="mt-2 text-slate-600 dark:text-slate-400">
           クイズを中断しますか？回答済みの問題は保存されています。
         </p>
         <div className="mt-4 flex justify-end gap-3">
           <button
-            className="rounded-full px-4 py-2 text-slate-600 hover:bg-slate-100"
+            className="rounded-full px-4 py-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
             onClick={() => setShowAbortDialog(false)}
             type="button"
           >

@@ -22,7 +22,7 @@ export default function TextInputQuestion({
 
   return (
     <div className="space-y-3">
-      <p className="text-lg font-medium text-slate-900">{question.question}</p>
+      <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -31,7 +31,7 @@ export default function TextInputQuestion({
       >
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded-2xl border border-slate-200 px-4 py-3"
+            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             disabled={disabled}
             onChange={(e) => setValue(e.target.value)}
             placeholder="解答を入力"
@@ -39,7 +39,7 @@ export default function TextInputQuestion({
             value={value}
           />
           <button
-            className="rounded-2xl bg-slate-900 px-4 py-3 text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-2xl bg-slate-900 px-4 py-3 text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300"
             disabled={disabled || value.trim() === ''}
             type="submit"
           >

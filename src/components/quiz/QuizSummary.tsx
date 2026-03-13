@@ -34,21 +34,21 @@ export default function QuizSummary({
 
   return (
     <Card>
-      <h2 className="text-2xl font-semibold text-slate-950">クイズ完了</h2>
+      <h2 className="text-2xl font-semibold text-slate-950 dark:text-slate-50">クイズ完了</h2>
 
       <div className="mt-4 space-y-1">
-        <p className="text-lg text-slate-700">
+        <p className="text-lg text-slate-700 dark:text-slate-300">
           {total}問中{correctCount}問正解
         </p>
-        <p className="text-3xl font-bold text-slate-900">{accuracyRate}%</p>
+        <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{accuracyRate}%</p>
       </div>
 
       <div className="mt-6">
-        <h3 className="text-sm font-medium text-slate-500">回答一覧</h3>
+        <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">回答一覧</h3>
         <ol className="mt-2 space-y-1">
           {results.map((r, i) => (
             <li
-              className="flex items-center gap-2 text-sm text-slate-700"
+              className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
               key={r.question.id}
             >
               <span>問題 {i + 1}</span>
