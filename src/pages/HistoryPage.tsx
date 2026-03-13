@@ -1,12 +1,150 @@
+import { Link, useParams } from 'react-router-dom';
+
 import Card from '../components/common/Card';
+import { useHistoryData } from '../hooks/useHistoryData';
+
+function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function formatPercent(rate: number): string {
+  return `${Math.round(rate * 100)}%`;
+}
 
 export default function HistoryPage() {
+  const { packId } = useParams<{ packId: string }>();
+  const { sessions, statistics, weakQuestions, loading, error } = useHistoryData(packId!);
+
   return (
-    <Card>
-      <h2 className="text-2xl font-semibold text-slate-950">学習履歴</h2>
-      <p className="mt-2 text-slate-600">
-        過去の結果一覧や苦手問題の分析機能は、今後追加する予定です。
-      </p>
-    </Card>
+    <div className="space-y-6">
+      <Card className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <p className="text-sm tracking-widest text-sky-700 dark:text-sky-400">
+              パック詳細
+            </p>
+            <h2 className="text-3xl font-semibold text-slate-950 dark:text-slate-50">
+              学習履歴
+            </h2>
+          </div>
+          <Link
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+            to="/"
+          >
+            戻る
+          </Link>
+        </div>
+      </Card>
+
+      {loading && (
+        <p className="text-center text-slate-500 dark:text-slate-400">読み込み中...</p>
+      )}
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      {!loading && !error && statistics?.totalAnswers === 0 && (
+        <Card>
+          <p className="text-slate-500 dark:text-slate-400">
+            まだ学習履歴がありません。クイズに挑戦してみましょう！
+          </p>
+        </Card>
+      )}
+
+      {!loading && !error && statistics && statistics.totalAnswers > 0 && (
+        <>
+          <Card className="space-y-3">
+            <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              全体統計
+            </h3>
+            <div className="flex gap-6">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-sky-600 dark:text-sky-400">
+                  {formatPercent(statistics.accuracyRate)}
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">正答率</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-slate-700 dark:text-slate-300">
+                  {statistics.totalAnswers}回
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">総回答数</p>
+              </div>
+              <div className="text-center">
+                <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
+                  {statistics.correctAnswers}問正解
+                </p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">正解数</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="space-y-3">
+            <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              セッション一覧
+            </h3>
+            <div className="space-y-2">
+              {sessions.map((session) => (
+                <div
+                  key={session.startedAt}
+                  className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
+                  data-testid="session-item"
+                >
+                  <span className="text-sm text-slate-600 dark:text-slate-400">
+                    {formatDate(session.startedAt)}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-slate-500 dark:text-slate-400">
+                      {session.totalAnswers}問中
+                    </span>
+                    <span className="font-semibold text-sky-600 dark:text-sky-400">
+                      {formatPercent(session.accuracyRate)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="space-y-3">
+            <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+              弱点問題
+            </h3>
+            {weakQuestions.length === 0 ? (
+              <p className="text-slate-500 dark:text-slate-400">弱点問題はありません</p>
+            ) : (
+              <div className="space-y-3">
+                {weakQuestions.map((wq) => (
+                  <div
+                    key={wq.questionId}
+                    className="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
+                    data-testid="weak-question-item"
+                  >
+                    <p className="font-medium text-slate-900 dark:text-slate-100">
+                      {wq.questionText}
+                    </p>
+                    <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
+                      <span>{wq.answerCount}回回答</span>
+                      <span>正答率: <span className="text-slate-700 dark:text-slate-300">{formatPercent(wq.accuracyRate)}</span></span>
+                      <span>直近の回答: <span className="text-slate-700 dark:text-slate-300">{wq.lastUserAnswer}</span></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </>
+      )}
+    </div>
   );
 }
