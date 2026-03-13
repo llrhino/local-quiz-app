@@ -5,6 +5,8 @@ import {
   importQuizPack,
   deleteQuizPack,
   openFileDialog,
+  openSaveFileDialog,
+  exportQuizPack,
   seedSamplePack,
 } from '../lib/commands';
 import type { QuizPackSummary } from '../lib/types';
@@ -66,5 +68,17 @@ export function useQuizPacks() {
     }
   }, [refresh]);
 
-  return { packs, loading, error, importing, refresh, importPack, seedSample, deletePack };
+  const exportPack = useCallback(async (packId: string, packName: string): Promise<string | null> => {
+    try {
+      const filePath = await openSaveFileDialog(`${packName}.json`);
+      if (!filePath) return null;
+
+      await exportQuizPack(packId, filePath);
+      return null;
+    } catch (e) {
+      return e instanceof Error ? e.message : 'エクスポートに失敗しました';
+    }
+  }, []);
+
+  return { packs, loading, error, importing, refresh, importPack, seedSample, deletePack, exportPack };
 }

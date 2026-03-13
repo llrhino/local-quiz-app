@@ -8,7 +8,7 @@ import { useQuizPacks } from '../hooks/useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
 
 export default function HomePage() {
-  const { packs, loading, error, importing, importPack, seedSample, deletePack } = useQuizPacks();
+  const { packs, loading, error, importing, importPack, seedSample, deletePack, exportPack } = useQuizPacks();
   const [notification, setNotification] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QuizPackSummary | null>(null);
 
@@ -105,6 +105,17 @@ export default function HomePage() {
             >
               履歴
             </Link>
+            <button
+              className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              onClick={async () => {
+                setNotification(null);
+                const err = await exportPack(pack.id, pack.name);
+                if (err) setNotification(err);
+              }}
+              type="button"
+            >
+              エクスポート
+            </button>
             <button
               className="inline-flex items-center justify-center rounded-full border border-red-300 px-4 py-2 font-medium text-red-700 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950"
               onClick={() => setDeleteTarget(pack)}

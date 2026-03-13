@@ -44,3 +44,9 @@ export const updateSetting = (key: string, value: string) =>
 export const seedSamplePack = () => invoke<QuizPack>('seed_sample_pack');
 
 export const openFileDialog = () => invoke<string | null>('open_file_dialog');
+
+export const openSaveFileDialog = (defaultName: string) =>
+  invoke<string | null>('open_save_file_dialog', { defaultName });
+
+export const exportQuizPack = (packId: string, filePath: string) =>
+  invoke<void>('export_quiz_pack', { packId, filePath });

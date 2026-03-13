@@ -5,7 +5,7 @@ use tauri::State;
 use crate::db::Database;
 use crate::models::{Question, QuizPack, QuizPackSummary};
 use crate::repositories::{question_repo, quiz_pack_repo};
-use crate::services::import_service;
+use crate::services::{export_service, import_service};
 
 const SAMPLE_PACK_JSON: &str = include_str!("../../resources/sample-quiz-pack.json");
 
@@ -74,6 +74,24 @@ pub fn get_questions_by_pack(
         .with_connection(|connection| {
             let questions = question_repo::get_questions_by_pack(connection, &pack_id)?;
             Ok(questions)
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn export_quiz_pack(
+    pack_id: String,
+    file_path: String,
+    database: State<'_, Database>,
+) -> Result<(), String> {
+    database
+        .with_connection(|connection| {
+            export_service::export_quiz_pack_to_file(
+                connection,
+                &pack_id,
+                Path::new(&file_path),
+            )?;
+            Ok(())
         })
         .map_err(|e| e.to_string())
 }

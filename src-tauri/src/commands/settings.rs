@@ -45,3 +45,20 @@ pub async fn open_file_dialog(app: AppHandle) -> Option<String> {
         .await
         .unwrap_or(None)
 }
+
+#[tauri::command]
+pub async fn open_save_file_dialog(app: AppHandle, default_name: String) -> Option<String> {
+    let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
+
+    app.dialog()
+        .file()
+        .add_filter("JSON ファイル", &["json"])
+        .set_file_name(&default_name)
+        .save_file(move |file| {
+            let _ = tx.send(file.map(|path| path.to_string()));
+        });
+
+    tauri::async_runtime::spawn_blocking(move || rx.recv().unwrap_or(None))
+        .await
+        .unwrap_or(None)
+}
