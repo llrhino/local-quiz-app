@@ -11,6 +11,12 @@ import {
 } from '../lib/commands';
 import type { QuizPackSummary } from '../lib/types';
 
+function extractErrorMessage(e: unknown, fallback: string): string {
+  if (e instanceof Error) return e.message;
+  if (typeof e === 'string') return e;
+  return fallback;
+}
+
 export function useQuizPacks() {
   const [packs, setPacks] = useState<QuizPackSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +48,7 @@ export function useQuizPacks() {
       await refresh();
       return null;
     } catch (e) {
-      return e instanceof Error ? e.message : 'インポートに失敗しました';
+      return extractErrorMessage(e, 'インポートに失敗しました');
     } finally {
       setImporting(false);
     }
@@ -54,7 +60,7 @@ export function useQuizPacks() {
       await refresh();
       return null;
     } catch (e) {
-      return e instanceof Error ? e.message : 'サンプルパックの読み込みに失敗しました';
+      return extractErrorMessage(e, 'サンプルパックの読み込みに失敗しました');
     }
   }, [refresh]);
 
@@ -64,7 +70,7 @@ export function useQuizPacks() {
       await refresh();
       return null;
     } catch (e) {
-      return e instanceof Error ? e.message : '削除に失敗しました';
+      return extractErrorMessage(e, '削除に失敗しました');
     }
   }, [refresh]);
 
@@ -76,7 +82,7 @@ export function useQuizPacks() {
       await exportQuizPack(packId, filePath);
       return null;
     } catch (e) {
-      return e instanceof Error ? e.message : 'エクスポートに失敗しました';
+      return extractErrorMessage(e, 'エクスポートに失敗しました');
     }
   }, []);
 

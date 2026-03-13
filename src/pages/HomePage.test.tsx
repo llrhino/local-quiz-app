@@ -206,6 +206,21 @@ describe('HomePage', () => {
       await user.click(screen.getByRole('button', { name: 'インポート' }));
       expect(screen.getByText('無効なJSON形式です')).toBeInTheDocument();
     });
+
+    it('複数行のエラーメッセージが改行付きで表示される', async () => {
+      const user = userEvent.setup();
+      const multilineError =
+        'Question ID: q1 / Field: type / Error: 不正な問題タイプです\nQuestion ID: q2 / Field: answer / Error: 必須フィールドがありません';
+      mockImportPack.mockResolvedValue(multilineError);
+      renderHomePage();
+
+      await user.click(screen.getByRole('button', { name: 'インポート' }));
+
+      const notification = screen.getByTestId('notification');
+      expect(notification).toHaveClass('whitespace-pre-line');
+      expect(notification).toHaveTextContent('Question ID: q1');
+      expect(notification).toHaveTextContent('Question ID: q2');
+    });
   });
 
   describe('削除機能', () => {

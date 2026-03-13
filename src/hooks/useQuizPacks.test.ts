@@ -154,6 +154,22 @@ describe('useQuizPacks', () => {
       expect(errorMsg).toBe('無効なJSON形式');
     });
 
+    it('Tauriからの文字列エラーをそのまま返す', async () => {
+      mockOpenFileDialog.mockResolvedValue('/path/to/invalid.json');
+      // Tauri v2のinvokeはErr(String)を文字列として直接rejectする
+      mockImportQuizPack.mockRejectedValue('JSON構文エラー: expected value at line 1 column 3');
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.importPack();
+      });
+
+      expect(errorMsg).toBe('JSON構文エラー: expected value at line 1 column 3');
+    });
+
     it('インポート成功時はnullを返す', async () => {
       mockOpenFileDialog.mockResolvedValue('/path/to/quiz.json');
       mockImportQuizPack.mockResolvedValue({
@@ -278,6 +294,20 @@ describe('useQuizPacks', () => {
 
       expect(errorMsg).toBe("パックID 'sample-security-basics' は既にインポートされています");
     });
+
+    it('Tauriからの文字列エラーをそのまま返す', async () => {
+      mockSeedSamplePack.mockRejectedValue("パックID 'sample-security-basics' は既にインポートされています");
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.seedSample();
+      });
+
+      expect(errorMsg).toBe("パックID 'sample-security-basics' は既にインポートされています");
+    });
   });
 
   describe('deletePack', () => {
@@ -308,6 +338,20 @@ describe('useQuizPacks', () => {
       });
 
       expect(errorMsg).toBe('削除権限がありません');
+    });
+
+    it('Tauriからの文字列エラーをそのまま返す', async () => {
+      mockDeleteQuizPack.mockRejectedValue('DB操作に失敗しました');
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.deletePack('pack-1');
+      });
+
+      expect(errorMsg).toBe('DB操作に失敗しました');
     });
 
     it('削除成功時はnullを返す', async () => {

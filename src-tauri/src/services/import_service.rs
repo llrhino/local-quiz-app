@@ -35,7 +35,52 @@ fn read_file(path: &Path) -> Result<String, String> {
 
 /// JSON文字列をパースし、構造を検証する
 fn parse_json(content: &str) -> Result<RawQuizPackFile, String> {
-    serde_json::from_str::<RawQuizPackFile>(content).map_err(|e| format!("JSON構文エラー: {e}"))
+    // まずJSONとして有効かチェック
+    let value: serde_json::Value =
+        serde_json::from_str(content).map_err(|e| format!("JSON構文エラー: {e}"))?;
+
+    let obj = value
+        .as_object()
+        .ok_or("JSONファイルはオブジェクト（{{ ... }}）である必要があります")?;
+
+    // pack フィールドのチェック
+    let pack_value = obj
+        .get("pack")
+        .ok_or("必須フィールド「pack」がありません。クイズパックのメタ情報を含む \"pack\" オブジェクトを追加してください")?;
+
+    let pack_obj = pack_value.as_object().ok_or(
+        "「pack」フィールドはオブジェクトである必要があります（例: { \"id\": \"...\", \"name\": \"...\" }）",
+    )?;
+
+    if !pack_obj.contains_key("id") {
+        return Err(
+            "必須フィールド「pack.id」がありません。パックの一意なIDを指定してください（例: \"my-quiz-pack\"）"
+                .to_string(),
+        );
+    }
+
+    if !pack_obj.contains_key("name") {
+        return Err(
+            "必須フィールド「pack.name」がありません。パックの表示名を指定してください"
+                .to_string(),
+        );
+    }
+
+    // questions フィールドのチェック
+    let questions_value = obj.get("questions").ok_or(
+        "必須フィールド「questions」がありません。問題の配列を含む \"questions\" フィールドを追加してください",
+    )?;
+
+    if !questions_value.is_array() {
+        return Err(
+            "「questions」フィールドは配列である必要があります（例: \"questions\": [ ... ]）"
+                .to_string(),
+        );
+    }
+
+    // 構造チェック通過後、serdeでデシリアライズ
+    serde_json::from_value::<RawQuizPackFile>(value)
+        .map_err(|e| format!("JSONの構造が不正です: {e}"))
 }
 
 /// 各問題のバリデーションを行う
@@ -353,7 +398,8 @@ mod tests {
     fn 不正なjson構文でエラーを返す() {
         let result = parse_json("{ invalid json }");
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("JSON構文エラー"));
+        let err = result.unwrap_err();
+        assert!(err.contains("JSON構文エラー"), "エラーメッセージ: {err}");
     }
 
     #[test]
@@ -361,7 +407,11 @@ mod tests {
         let json = r#"{ "questions": [] }"#;
         let result = parse_json(json);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("JSON構文エラー"));
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("pack"),
+            "エラーにpackフィールドが含まれること: {err}"
+        );
     }
 
     #[test]
@@ -369,7 +419,11 @@ mod tests {
         let json = r#"{ "pack": { "id": "p1", "name": "test" } }"#;
         let result = parse_json(json);
         assert!(result.is_err());
-        assert!(result.unwrap_err().contains("JSON構文エラー"));
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("questions"),
+            "エラーにquestionsフィールドが含まれること: {err}"
+        );
     }
 
     #[test]
@@ -377,6 +431,11 @@ mod tests {
         let json = r#"{ "pack": { "name": "test" }, "questions": [] }"#;
         let result = parse_json(json);
         assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("pack.id"),
+            "エラーにpack.idフィールドが含まれること: {err}"
+        );
     }
 
     #[test]
@@ -384,6 +443,34 @@ mod tests {
         let json = r#"{ "pack": { "id": "p1" }, "questions": [] }"#;
         let result = parse_json(json);
         assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("pack.name"),
+            "エラーにpack.nameフィールドが含まれること: {err}"
+        );
+    }
+
+    #[test]
+    fn questionsが配列でない場合エラーを返す() {
+        let json = r#"{ "pack": { "id": "p1", "name": "test" }, "questions": "not_array" }"#;
+        let result = parse_json(json);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("questions"),
+            "エラーにquestionsフィールドが含まれること: {err}"
+        );
+    }
+
+    #[test]
+    fn 空のjsonオブジェクトでエラーを返す() {
+        let result = parse_json("{}");
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("pack"),
+            "エラーにpackフィールドが含まれること: {err}"
+        );
     }
 
     // --- 問題タイプバリデーション ---
