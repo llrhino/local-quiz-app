@@ -46,9 +46,8 @@ describe('App', () => {
     );
 
     expect(screen.getByRole('heading', { name: '設定' })).toBeInTheDocument();
-    expect(
-      screen.getByText('アプリ設定は用意されており、今後永続化に対応する予定です。'),
-    ).toBeInTheDocument();
+    expect(screen.getByText('出題順')).toBeInTheDocument();
+    expect(screen.getByText('テーマ')).toBeInTheDocument();
 
     cleanup();
 
