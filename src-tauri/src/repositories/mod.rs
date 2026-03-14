@@ -31,15 +31,13 @@ pub(crate) mod test_helpers {
                     question: "AESで一般的な鍵長はどれか".to_string(),
                     choices: vec![
                         Choice {
-                            id: "a".to_string(),
                             text: "64ビット".to_string(),
                         },
                         Choice {
-                            id: "b".to_string(),
                             text: "256ビット".to_string(),
                         },
                     ],
-                    answer: "b".to_string(),
+                    answer: 1,
                     explanation: Some("AES-256 が代表例".to_string()),
                 },
                 Question::TrueFalse {
@@ -64,14 +62,14 @@ pub(crate) mod test_helpers {
                 pack_id: "security-pack".to_string(),
                 question_id: "q1".to_string(),
                 is_correct: false,
-                user_answer: "a".to_string(),
+                user_answer: "0".to_string(),
                 answered_at: "2026-03-10T10:00:00Z".to_string(),
             },
             AnswerRecord {
                 pack_id: "security-pack".to_string(),
                 question_id: "q1".to_string(),
                 is_correct: true,
-                user_answer: "b".to_string(),
+                user_answer: "1".to_string(),
                 answered_at: "2026-03-10T10:05:00Z".to_string(),
             },
             AnswerRecord {

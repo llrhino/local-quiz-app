@@ -49,6 +49,18 @@ export default function QuizPage() {
     nextQuestion();
   }, [nextQuestion]);
 
+  // Enterキーで次の問題へ遷移
+  useEffect(() => {
+    if (!answerResult) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        handleNext();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [answerResult, handleNext]);
+
   const handleAbort = useCallback(() => {
     resetSession();
     navigate('/');

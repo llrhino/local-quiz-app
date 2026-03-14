@@ -10,7 +10,6 @@ pub enum QuestionType {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Choice {
-    pub id: String,
     pub text: String,
 }
 
@@ -21,7 +20,7 @@ pub enum Question {
         id: String,
         question: String,
         choices: Vec<Choice>,
-        answer: String,
+        answer: usize,
         explanation: Option<String>,
     },
     TrueFalse {
@@ -67,15 +66,13 @@ mod tests {
             question: "AESの鍵長として一般的なものはどれか".to_string(),
             choices: vec![
                 Choice {
-                    id: "a".to_string(),
                     text: "128ビット".to_string(),
                 },
                 Choice {
-                    id: "b".to_string(),
                     text: "256ビット".to_string(),
                 },
             ],
-            answer: "b".to_string(),
+            answer: 1,
             explanation: Some("AES-256が代表例".to_string()),
         };
 
@@ -85,7 +82,7 @@ mod tests {
         assert_eq!(value["type"], "multiple_choice");
         assert_eq!(value["id"], "network-001");
         assert_eq!(value["question"], "AESの鍵長として一般的なものはどれか");
-        assert_eq!(value["answer"], "b");
+        assert_eq!(value["answer"], 1);
         assert_eq!(
             value["choices"].as_array().map(|choices| choices.len()),
             Some(2)

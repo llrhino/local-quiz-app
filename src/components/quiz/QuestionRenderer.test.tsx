@@ -14,10 +14,10 @@ const mcq: MultipleChoiceQuestion = {
   type: 'multiple_choice',
   question: '選択問題',
   choices: [
-    { id: 'a', text: '選択肢A' },
-    { id: 'b', text: '選択肢B' },
+    { text: '選択肢A' },
+    { text: '選択肢B' },
   ],
-  answer: 'a',
+  answer: 0,
 };
 
 const tfq: TrueFalseQuestion = {
@@ -42,7 +42,7 @@ describe('QuestionRenderer', () => {
 
     expect(screen.getByText('選択問題')).toBeInTheDocument();
     await user.click(screen.getByText('選択肢A'));
-    expect(onAnswer).toHaveBeenCalledWith('a');
+    expect(onAnswer).toHaveBeenCalledWith('0');
   });
 
   it('true_falseの問題を描画し、回答を伝播する', async () => {

@@ -58,7 +58,7 @@ mod tests {
         let history = get_learning_history(&conn, &pack.id).unwrap();
         assert_eq!(history.len(), 1);
         assert_eq!(history[0].question_id, "q1");
-        assert_eq!(history[0].user_answer, "a");
+        assert_eq!(history[0].user_answer, "0");
         assert!(!history[0].is_correct);
     }
 

@@ -8,7 +8,8 @@ export function formatDisplayAnswer(question: Question, rawAnswer: string): stri
     case 'true_false':
       return rawAnswer === 'true' ? '〇' : '×';
     case 'multiple_choice': {
-      const choice = question.choices.find((c) => c.id === rawAnswer);
+      const index = Number(rawAnswer);
+      const choice = question.choices[index];
       return choice ? choice.text : rawAnswer;
     }
     case 'text_input':

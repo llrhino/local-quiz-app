@@ -1,7 +1,6 @@
 export type QuestionType = 'multiple_choice' | 'true_false' | 'text_input';
 
 export type Choice = {
-  id: string;
   text: string;
 };
 
@@ -14,7 +13,7 @@ type QuestionBase = {
 export type MultipleChoiceQuestion = QuestionBase & {
   type: 'multiple_choice';
   choices: Choice[];
-  answer: string;
+  answer: number;
 };
 
 export type TrueFalseQuestion = QuestionBase & {

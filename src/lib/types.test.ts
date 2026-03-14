@@ -23,9 +23,8 @@ describe('types.ts 型定義', () => {
   });
 
   describe('Choice', () => {
-    it('id と text を持つ', () => {
-      const choice: Choice = { id: 'a', text: '選択肢A' };
-      expect(choice.id).toBe('a');
+    it('text を持つ', () => {
+      const choice: Choice = { text: '選択肢A' };
       expect(choice.text).toBe('選択肢A');
     });
   });
@@ -36,8 +35,8 @@ describe('types.ts 型定義', () => {
         type: 'multiple_choice',
         id: 'q1',
         question: 'テスト問題',
-        choices: [{ id: 'a', text: '選択肢A' }],
-        answer: 'a',
+        choices: [{ text: '選択肢A' }],
+        answer: 0,
       };
       expect(q.type).toBe('multiple_choice');
       expect(q.choices).toHaveLength(1);
@@ -71,8 +70,8 @@ describe('types.ts 型定義', () => {
           type: 'multiple_choice',
           id: 'q1',
           question: '問題1',
-          choices: [{ id: 'a', text: 'A' }],
-          answer: 'a',
+          choices: [{ text: 'A' }],
+          answer: 0,
         },
         {
           type: 'true_false',

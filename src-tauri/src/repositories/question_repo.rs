@@ -72,11 +72,19 @@ pub fn get_questions_by_pack(connection: &Connection, pack_id: &str) -> RepoResu
                             Box::new(error),
                         )
                     })?;
+                let answer_str: String = row.get(4)?;
+                let answer: usize = answer_str.parse().map_err(|error| {
+                    rusqlite::Error::FromSqlConversionFailure(
+                        4,
+                        rusqlite::types::Type::Text,
+                        Box::new(error),
+                    )
+                })?;
                 Question::MultipleChoice {
                     id: row.get(0)?,
                     question: row.get(2)?,
                     choices,
-                    answer: row.get(4)?,
+                    answer,
                     explanation: if explanation.is_empty() {
                         None
                     } else {
@@ -158,9 +166,8 @@ impl QuestionPersistenceExt for Question {
 
     fn correct_answer(&self) -> String {
         match self {
-            Question::MultipleChoice { answer, .. } | Question::TextInput { answer, .. } => {
-                answer.clone()
-            }
+            Question::MultipleChoice { answer, .. } => answer.to_string(),
+            Question::TextInput { answer, .. } => answer.clone(),
             Question::TrueFalse { answer, .. } => answer.to_string(),
         }
     }

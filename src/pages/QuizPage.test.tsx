@@ -43,11 +43,11 @@ const questions: Question[] = [
     type: 'multiple_choice',
     question: '1+1は？',
     choices: [
-      { id: 'a', text: '1' },
-      { id: 'b', text: '2' },
-      { id: 'c', text: '3' },
+      { text: '1' },
+      { text: '2' },
+      { text: '3' },
     ],
-    answer: 'b',
+    answer: 1,
   },
   {
     id: 'q2',
@@ -112,7 +112,7 @@ describe('QuizPage', () => {
 
       await user.click(screen.getByText('2'));
 
-      expect(mockSubmitAndSave).toHaveBeenCalledWith('pack-1', 'b');
+      expect(mockSubmitAndSave).toHaveBeenCalledWith('pack-1', '1');
       expect(screen.getByText('正解')).toBeInTheDocument();
     });
 
@@ -124,11 +124,11 @@ describe('QuizPage', () => {
 
       await user.click(screen.getByText('1'));
 
-      // ユーザーが選んだ不正解の選択肢（id:a）は赤ハイライト
+      // ユーザーが選んだ不正解の選択肢（index:0）は赤ハイライト
       const wrongButton = screen.getByText('1').closest('button')!;
       expect(wrongButton.className).toContain('bg-red-100');
 
-      // 正解の選択肢（id:b = '2'）は緑ハイライト
+      // 正解の選択肢（index:1 = '2'）は緑ハイライト
       const correctButton = screen.getByText('2').closest('button')!;
       expect(correctButton.className).toContain('bg-emerald-100');
     });
@@ -163,7 +163,7 @@ describe('QuizPage', () => {
     it('全問完了時にサマリーと正答率を表示する', () => {
       setupSessionState({
         isCompleted: true,
-        answers: ['b', 'true'],
+        answers: ['1', 'true'],
         currentIndex: 2,
       });
       renderQuizPage();
@@ -176,7 +176,7 @@ describe('QuizPage', () => {
     it('回答一覧を表示する', () => {
       setupSessionState({
         isCompleted: true,
-        answers: ['b', 'true'],
+        answers: ['1', 'true'],
         currentIndex: 2,
       });
       renderQuizPage();
@@ -188,7 +188,7 @@ describe('QuizPage', () => {
     it('「パック一覧に戻る」ボタンでホームに遷移する', async () => {
       setupSessionState({
         isCompleted: true,
-        answers: ['b', 'true'],
+        answers: ['1', 'true'],
         currentIndex: 2,
       });
       const user = userEvent.setup();
@@ -202,7 +202,7 @@ describe('QuizPage', () => {
     it('「もう一度挑戦する」ボタンでセッションを再開する', async () => {
       setupSessionState({
         isCompleted: true,
-        answers: ['b', 'true'],
+        answers: ['1', 'true'],
         currentIndex: 2,
       });
       const user = userEvent.setup();

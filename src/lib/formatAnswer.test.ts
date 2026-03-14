@@ -27,23 +27,23 @@ describe('formatDisplayAnswer', () => {
       type: 'multiple_choice',
       question: '1+1は？',
       choices: [
-        { id: 'a', text: '1' },
-        { id: 'b', text: '2' },
-        { id: 'c', text: '3' },
+        { text: '1' },
+        { text: '2' },
+        { text: '3' },
       ],
-      answer: 'b',
+      answer: 1,
     };
 
-    it('選択肢IDを選択肢テキストに変換する', () => {
-      expect(formatDisplayAnswer(question, 'b')).toBe('2');
+    it('選択肢インデックスを選択肢テキストに変換する', () => {
+      expect(formatDisplayAnswer(question, '1')).toBe('2');
     });
 
-    it('不正解の選択肢IDもテキストに変換する', () => {
-      expect(formatDisplayAnswer(question, 'a')).toBe('1');
+    it('不正解の選択肢インデックスもテキストに変換する', () => {
+      expect(formatDisplayAnswer(question, '0')).toBe('1');
     });
 
-    it('一致する選択肢がない場合はIDをそのまま返す', () => {
-      expect(formatDisplayAnswer(question, 'z')).toBe('z');
+    it('範囲外のインデックスの場合はそのまま返す', () => {
+      expect(formatDisplayAnswer(question, '99')).toBe('99');
     });
   });
 

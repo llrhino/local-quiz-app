@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 
-import type { Choice, MultipleChoiceQuestion as MultipleChoiceQuestionType } from '../../lib/types';
+import type { MultipleChoiceQuestion as MultipleChoiceQuestionType } from '../../lib/types';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
 
 type AnswerResult = {
@@ -16,6 +16,11 @@ type Props = {
   correctAnswer?: string;
 };
 
+type DisplayChoice = {
+  originalIndex: number;
+  text: string;
+};
+
 function shuffleArray<T>(array: T[]): T[] {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -25,15 +30,15 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-function getChoiceClassName(choiceId: string, answerResult?: AnswerResult, correctAnswer?: string): string {
+function getChoiceClassName(choiceIndex: string, answerResult?: AnswerResult, correctAnswer?: string): string {
   const base = 'rounded-2xl border px-4 py-3 text-left text-slate-800 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50';
   const darkBase = 'dark:text-slate-200';
 
   if (answerResult && correctAnswer) {
-    if (choiceId === correctAnswer) {
+    if (choiceIndex === correctAnswer) {
       return `${base} border-emerald-300 bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900 ${darkBase}`;
     }
-    if (choiceId === answerResult.userAnswer && !answerResult.isCorrect) {
+    if (choiceIndex === answerResult.userAnswer && !answerResult.isCorrect) {
       return `${base} border-red-300 bg-red-100 dark:border-red-700 dark:bg-red-900 ${darkBase}`;
     }
   }
@@ -50,8 +55,11 @@ export default function MultipleChoiceQuestion({
 }: Props) {
   const shuffleChoices = useAppSettingsStore((s) => s.shuffleChoices);
 
-  const displayChoices: Choice[] = useMemo(
-    () => (shuffleChoices ? shuffleArray(question.choices) : question.choices),
+  const displayChoices: DisplayChoice[] = useMemo(
+    () => {
+      const indexed = question.choices.map((c, i) => ({ originalIndex: i, text: c.text }));
+      return shuffleChoices ? shuffleArray(indexed) : indexed;
+    },
     [question.id, shuffleChoices],
   );
 
@@ -60,7 +68,7 @@ export default function MultipleChoiceQuestion({
       if (disabled) return;
       const num = Number(e.key);
       if (num >= 1 && num <= displayChoices.length) {
-        onAnswer(displayChoices[num - 1].id);
+        onAnswer(String(displayChoices[num - 1].originalIndex));
       }
     },
     [disabled, onAnswer, displayChoices],
@@ -77,10 +85,10 @@ export default function MultipleChoiceQuestion({
       <div className="grid gap-3">
         {displayChoices.map((choice, index) => (
           <button
-            className={getChoiceClassName(choice.id, answerResult, correctAnswer)}
+            className={getChoiceClassName(String(choice.originalIndex), answerResult, correctAnswer)}
             disabled={disabled}
-            key={choice.id}
-            onClick={() => onAnswer(choice.id)}
+            key={choice.originalIndex}
+            onClick={() => onAnswer(String(choice.originalIndex))}
             type="button"
           >
             <span className="mr-2 font-mono text-sm text-slate-400">

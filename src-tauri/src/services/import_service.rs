@@ -186,24 +186,18 @@ fn validate_multiple_choice(
         ));
     }
 
-    // 各選択肢に id と text があるか
-    let choice_ids: Vec<&str> = choices
-        .iter()
-        .filter_map(|c| c.get("id").and_then(|v| v.as_str()))
-        .collect();
-
-    // answer のチェック
-    match value.get("answer").and_then(|v| v.as_str()) {
+    // answer のチェック（選択肢配列のインデックス）
+    match value.get("answer").and_then(|v| v.as_u64()) {
         Some(answer) => {
-            if !choice_ids.contains(&answer) {
+            if answer as usize >= count {
                 errors.push(format!(
-                    "Question ID: {question_id} / Field: answer / Error: 回答が選択肢内に存在しません: {answer}"
+                    "Question ID: {question_id} / Field: answer / Error: 回答インデックスが選択肢の範囲外です: {answer}（選択肢数: {count}）"
                 ));
             }
         }
         None => {
             errors.push(format!(
-                "Question ID: {question_id} / Field: answer / Error: 必須フィールドがありません"
+                "Question ID: {question_id} / Field: answer / Error: 必須フィールドがありません（選択肢のインデックスを整数で指定してください）"
             ));
         }
     }
@@ -319,10 +313,10 @@ mod tests {
                     "type": "multiple_choice",
                     "question": "1+1は？",
                     "choices": [
-                        {"id": "a", "text": "1"},
-                        {"id": "b", "text": "2"}
+                        {"text": "1"},
+                        {"text": "2"}
                     ],
-                    "answer": "b"
+                    "answer": 1
                 },
                 {
                     "id": "q2",
@@ -512,8 +506,8 @@ mod tests {
             "id": "q1",
             "type": "multiple_choice",
             "question": "テスト",
-            "choices": [{"id": "a", "text": "1"}],
-            "answer": "a"
+            "choices": [{"text": "1"}],
+            "answer": 0
         })];
         let result = validate_questions(&questions);
         assert!(result.is_err());
@@ -530,13 +524,13 @@ mod tests {
             "type": "multiple_choice",
             "question": "テスト",
             "choices": [
-                {"id": "a", "text": "1"},
-                {"id": "b", "text": "2"},
-                {"id": "c", "text": "3"},
-                {"id": "d", "text": "4"},
-                {"id": "e", "text": "5"}
+                {"text": "1"},
+                {"text": "2"},
+                {"text": "3"},
+                {"text": "4"},
+                {"text": "5"}
             ],
-            "answer": "a"
+            "answer": 0
         })];
         let result = validate_questions(&questions);
         assert!(result.is_err());
@@ -550,7 +544,7 @@ mod tests {
             "id": "q1",
             "type": "multiple_choice",
             "question": "テスト",
-            "answer": "a"
+            "answer": 0
         })];
         let result = validate_questions(&questions);
         assert!(result.is_err());
@@ -561,23 +555,23 @@ mod tests {
     // --- 正答整合性バリデーション ---
 
     #[test]
-    fn multiple_choiceでanswerが選択肢に存在しない場合エラーを返す() {
+    fn multiple_choiceでanswerが選択肢の範囲外の場合エラーを返す() {
         let questions = vec![serde_json::json!({
             "id": "q1",
             "type": "multiple_choice",
             "question": "テスト",
             "choices": [
-                {"id": "a", "text": "1"},
-                {"id": "b", "text": "2"}
+                {"text": "1"},
+                {"text": "2"}
             ],
-            "answer": "c"
+            "answer": 2
         })];
         let result = validate_questions(&questions);
         assert!(result.is_err());
         let err = result.unwrap_err();
         assert!(err.contains("Question ID: q1"));
         assert!(err.contains("Field: answer"));
-        assert!(err.contains("選択肢内に存在しません"));
+        assert!(err.contains("範囲外"));
     }
 
     #[test]

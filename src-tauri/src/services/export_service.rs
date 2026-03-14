@@ -68,10 +68,10 @@ mod tests {
                     "type": "multiple_choice",
                     "question": "1+1は？",
                     "choices": [
-                        {"id": "a", "text": "1"},
-                        {"id": "b", "text": "2"}
+                        {"text": "1"},
+                        {"text": "2"}
                     ],
-                    "answer": "b"
+                    "answer": 1
                 },
                 {
                     "id": "q2",
@@ -212,7 +212,7 @@ mod tests {
         let q1 = &questions[0];
         assert_eq!(q1["type"], "multiple_choice");
         assert_eq!(q1["id"], "q1");
-        assert_eq!(q1["answer"], "b");
+        assert_eq!(q1["answer"], 1);
         assert_eq!(q1["choices"].as_array().unwrap().len(), 2);
 
         // true_false

@@ -11,12 +11,12 @@ const question: MCQType = {
   type: 'multiple_choice',
   question: 'JavaScriptの型でないものは？',
   choices: [
-    { id: 'a', text: 'string' },
-    { id: 'b', text: 'number' },
-    { id: 'c', text: 'char' },
-    { id: 'd', text: 'boolean' },
+    { text: 'string' },
+    { text: 'number' },
+    { text: 'char' },
+    { text: 'boolean' },
   ],
-  answer: 'c',
+  answer: 2,
 };
 
 describe('MultipleChoiceQuestion', () => {
@@ -33,13 +33,13 @@ describe('MultipleChoiceQuestion', () => {
     expect(screen.getByText('boolean')).toBeInTheDocument();
   });
 
-  it('選択肢をクリックするとonAnswerが選択肢IDで呼ばれる', async () => {
+  it('選択肢をクリックするとonAnswerが選択肢インデックスで呼ばれる', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
     render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
 
     await user.click(screen.getByText('char'));
-    expect(onAnswer).toHaveBeenCalledWith('c');
+    expect(onAnswer).toHaveBeenCalledWith('2');
   });
 
   it('1〜4キーで対応する選択肢を選択できる', async () => {
@@ -48,7 +48,7 @@ describe('MultipleChoiceQuestion', () => {
     render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
 
     await user.keyboard('3');
-    expect(onAnswer).toHaveBeenCalledWith('c');
+    expect(onAnswer).toHaveBeenCalledWith('2');
   });
 
   it('選択肢数を超えるキーは無視される', async () => {
@@ -98,8 +98,8 @@ describe('MultipleChoiceQuestion', () => {
           question={question}
           onAnswer={vi.fn()}
           disabled
-          answerResult={{ userAnswer: 'c', isCorrect: true }}
-          correctAnswer="c"
+          answerResult={{ userAnswer: '2', isCorrect: true }}
+          correctAnswer="2"
         />,
       );
 
@@ -114,8 +114,8 @@ describe('MultipleChoiceQuestion', () => {
           question={question}
           onAnswer={vi.fn()}
           disabled
-          answerResult={{ userAnswer: 'a', isCorrect: false }}
-          correctAnswer="c"
+          answerResult={{ userAnswer: '0', isCorrect: false }}
+          correctAnswer="2"
         />,
       );
 
@@ -178,33 +178,33 @@ describe('MultipleChoiceQuestion', () => {
       mockRandom.mockRestore();
     });
 
-    it('shuffleChoicesがtrueでもクリックで正しい選択肢IDが返される', async () => {
+    it('shuffleChoicesがtrueでもクリックで正しい選択肢インデックスが返される', async () => {
       useAppSettingsStore.setState({ shuffleChoices: true });
       const onAnswer = vi.fn();
       const user = userEvent.setup();
       render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
 
       await user.click(screen.getByText('char'));
-      expect(onAnswer).toHaveBeenCalledWith('c');
+      expect(onAnswer).toHaveBeenCalledWith('2');
     });
 
-    it('shuffleChoicesがtrueでも回答後ハイライトは正しい選択肢IDで適用される', () => {
+    it('shuffleChoicesがtrueでも回答後ハイライトは正しい選択肢インデックスで適用される', () => {
       useAppSettingsStore.setState({ shuffleChoices: true });
       render(
         <MultipleChoiceQuestion
           question={question}
           onAnswer={vi.fn()}
           disabled
-          answerResult={{ userAnswer: 'a', isCorrect: false }}
-          correctAnswer="c"
+          answerResult={{ userAnswer: '0', isCorrect: false }}
+          correctAnswer="2"
         />,
       );
 
-      // 正解の選択肢（char = id:c）は緑ハイライト
+      // 正解の選択肢（char = index:2）は緑ハイライト
       const charButton = screen.getByText('char').closest('button')!;
       expect(charButton.className).toContain('bg-emerald-100');
 
-      // ユーザーが選んだ不正解（string = id:a）は赤ハイライト
+      // ユーザーが選んだ不正解（string = index:0）は赤ハイライト
       const stringButton = screen.getByText('string').closest('button')!;
       expect(stringButton.className).toContain('bg-red-100');
     });
@@ -215,13 +215,13 @@ describe('MultipleChoiceQuestion', () => {
       const user = userEvent.setup();
       render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
 
-      // 1キーを押すと、表示順の1番目の選択肢IDが返される
+      // 1キーを押すと、表示順の1番目の選択肢の元インデックスが返される
       await user.keyboard('1');
       expect(onAnswer).toHaveBeenCalledTimes(1);
       const buttons = screen.getAllByRole('button');
       const firstButtonText = buttons[0].textContent?.replace(/^\d+\.\s*/, '');
-      const firstChoice = question.choices.find((c) => c.text === firstButtonText);
-      expect(onAnswer).toHaveBeenCalledWith(firstChoice?.id);
+      const originalIndex = question.choices.findIndex((c) => c.text === firstButtonText);
+      expect(onAnswer).toHaveBeenCalledWith(String(originalIndex));
     });
   });
 });

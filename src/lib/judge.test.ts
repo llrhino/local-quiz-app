@@ -3,12 +3,12 @@ import { judgeAnswer } from './judge';
 
 describe('judgeAnswer', () => {
   describe('multiple_choice', () => {
-    it('選択肢IDが一致する場合、正解と判定する', () => {
-      expect(judgeAnswer('multiple_choice', 'a', 'a')).toBe(true);
+    it('選択肢インデックスが一致する場合、正解と判定する', () => {
+      expect(judgeAnswer('multiple_choice', '0', '0')).toBe(true);
     });
 
-    it('選択肢IDが一致しない場合、不正解と判定する', () => {
-      expect(judgeAnswer('multiple_choice', 'a', 'b')).toBe(false);
+    it('選択肢インデックスが一致しない場合、不正解と判定する', () => {
+      expect(judgeAnswer('multiple_choice', '0', '1')).toBe(false);
     });
   });
 
