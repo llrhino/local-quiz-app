@@ -40,6 +40,15 @@ describe('TrueFalseQuestion', () => {
     expect(onAnswer).toHaveBeenCalledWith('false');
   });
 
+  it('○×ボタンに押下フィードバック用のクラスが適用されている', () => {
+    render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    for (const button of buttons) {
+      expect(button.className).toContain('active:scale-[0.97]');
+      expect(button.className).toContain('transition-transform');
+    }
+  });
+
   it('disabled時はボタンをクリックしてもonAnswerが呼ばれない', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();

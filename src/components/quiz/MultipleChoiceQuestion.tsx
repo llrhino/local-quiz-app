@@ -52,7 +52,7 @@ export default function MultipleChoiceQuestion({
       <div className="grid gap-3">
         {displayChoices.map((choice, index) => (
           <button
-            className="rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-800 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            className="rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-800 transition-transform hover:bg-slate-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
             disabled={disabled}
             key={choice.id}
             onClick={() => onAnswer(choice.id)}

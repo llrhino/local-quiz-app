@@ -82,6 +82,15 @@ describe('MultipleChoiceQuestion', () => {
     expect(onAnswer).not.toHaveBeenCalled();
   });
 
+  it('選択肢ボタンに押下フィードバック用のクラスが適用されている', () => {
+    render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    for (const button of buttons) {
+      expect(button.className).toContain('active:scale-[0.97]');
+      expect(button.className).toContain('transition-transform');
+    }
+  });
+
   describe('選択肢シャッフル', () => {
     it('shuffleChoicesがfalseの場合、選択肢は定義順に表示される', () => {
       useAppSettingsStore.setState({ shuffleChoices: false });
