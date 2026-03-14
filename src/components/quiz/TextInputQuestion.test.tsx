@@ -51,6 +51,29 @@ describe('TextInputQuestion', () => {
     expect(onAnswer).toHaveBeenCalledWith('HTML');
   });
 
+  it('問題が切り替わると入力欄がクリアされる', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    const question2: TIQType = {
+      id: 'q2',
+      type: 'text_input',
+      question: 'CSSの正式名称は？',
+      answer: 'Cascading Style Sheets',
+    };
+
+    const { rerender } = render(
+      <TextInputQuestion question={question} onAnswer={onAnswer} />,
+    );
+
+    const input = screen.getByPlaceholderText('解答を入力');
+    await user.type(input, 'テスト回答');
+    expect(input).toHaveValue('テスト回答');
+
+    // 問題が切り替わったら入力欄がクリアされる
+    rerender(<TextInputQuestion question={question2} onAnswer={onAnswer} />);
+    expect(screen.getByPlaceholderText('解答を入力')).toHaveValue('');
+  });
+
   it('disabled時は入力・送信ができない', () => {
     render(
       <TextInputQuestion question={question} onAnswer={vi.fn()} disabled />,

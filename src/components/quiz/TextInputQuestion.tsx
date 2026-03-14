@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import type { TextInputQuestion as TextInputQuestionType } from '../../lib/types';
 
@@ -14,6 +14,11 @@ export default function TextInputQuestion({
   disabled,
 }: Props) {
   const [value, setValue] = useState('');
+
+  // 問題が切り替わったら入力欄をクリアする
+  useEffect(() => {
+    setValue('');
+  }, [question.id]);
 
   const handleSubmit = () => {
     if (value.trim() === '') return;
