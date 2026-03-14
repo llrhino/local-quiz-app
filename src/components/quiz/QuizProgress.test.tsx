@@ -60,6 +60,7 @@ describe('QuizProgress', () => {
       const streakElement = screen.getByText('3連続正解');
       expect(streakElement.className).toContain('text-amber-500');
       expect(streakElement.className).toContain('animate-bounce-subtle');
+      expect(streakElement.className).toContain('motion-reduce:animate-none');
     });
 
     it('streak 5-6 で orange 色とバウンスアニメーション、テキスト拡大が適用される', () => {
@@ -67,6 +68,7 @@ describe('QuizProgress', () => {
       const streakElement = screen.getByText('5連続正解');
       expect(streakElement.className).toContain('text-orange-500');
       expect(streakElement.className).toContain('animate-bounce-medium');
+      expect(streakElement.className).toContain('motion-reduce:animate-none');
       expect(streakElement.className).toContain('text-base');
     });
 
@@ -75,6 +77,7 @@ describe('QuizProgress', () => {
       const streakElement = screen.getByText('7連続正解');
       expect(streakElement.className).toContain('text-red-500');
       expect(streakElement.className).toContain('animate-bounce-strong');
+      expect(streakElement.className).toContain('motion-reduce:animate-none');
       expect(streakElement.className).toContain('text-lg');
     });
 

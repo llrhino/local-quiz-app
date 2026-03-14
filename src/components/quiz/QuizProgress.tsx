@@ -6,12 +6,12 @@ type Props = {
 
 function getStreakStyle(streak: number) {
   if (streak >= 7) {
-    return 'text-lg font-bold text-red-500 animate-bounce-strong';
+    return 'text-lg font-bold text-red-500 animate-bounce-strong motion-reduce:animate-none';
   }
   if (streak >= 5) {
-    return 'text-base font-bold text-orange-500 animate-bounce-medium';
+    return 'text-base font-bold text-orange-500 animate-bounce-medium motion-reduce:animate-none';
   }
-  return 'text-sm font-medium text-amber-500 animate-bounce-subtle';
+  return 'text-sm font-medium text-amber-500 animate-bounce-subtle motion-reduce:animate-none';
 }
 
 export default function QuizProgress({ current, total, streak }: Props) {
