@@ -38,4 +38,19 @@ describe('QuizProgress', () => {
     expect(innerBar.className).toContain('duration-300');
     expect(innerBar.className).toContain('ease-out');
   });
+
+  it('streak が3以上の場合に連続正解を表示する', () => {
+    render(<QuizProgress current={4} total={10} streak={3} />);
+    expect(screen.getByText('3連続正解')).toBeInTheDocument();
+  });
+
+  it('streak が3未満の場合は連続正解を表示しない', () => {
+    render(<QuizProgress current={3} total={10} streak={2} />);
+    expect(screen.queryByText(/連続正解/)).not.toBeInTheDocument();
+  });
+
+  it('streak が未指定の場合は連続正解を表示しない', () => {
+    render(<QuizProgress current={3} total={10} />);
+    expect(screen.queryByText(/連続正解/)).not.toBeInTheDocument();
+  });
 });

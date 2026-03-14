@@ -33,8 +33,9 @@ export function useQuizSessionActions() {
       const correctAnswer = getCorrectAnswer(question);
       const isCorrect = judgeAnswer(question.type, userAnswer, correctAnswer);
 
-      // ストアに回答を記録
+      // ストアに回答を記録し、ストリークを更新
       useQuizSession.getState().submitAnswer(userAnswer);
+      useQuizSession.getState().updateStreak(isCorrect);
 
       // バックエンドに履歴保存（失敗しても回答は記録済み）
       try {

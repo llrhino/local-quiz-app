@@ -131,6 +131,44 @@ describe('quizSessionStore', () => {
     });
   });
 
+  describe('streak', () => {
+    it('初期状態でstreakは0', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      expect(useQuizSession.getState().streak).toBe(0);
+    });
+
+    it('正解時にstreakがインクリメントされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      expect(useQuizSession.getState().streak).toBe(1);
+      useQuizSession.getState().updateStreak(true);
+      expect(useQuizSession.getState().streak).toBe(2);
+    });
+
+    it('不正解時にstreakが0にリセットされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(false);
+      expect(useQuizSession.getState().streak).toBe(0);
+    });
+
+    it('セッション開始時にstreakがリセットされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().startSession(sampleQuestions);
+      expect(useQuizSession.getState().streak).toBe(0);
+    });
+
+    it('resetSession時にstreakがリセットされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().resetSession();
+      expect(useQuizSession.getState().streak).toBe(0);
+    });
+  });
+
   describe('シャッフル', () => {
     it('startSession にシャッフルオプションを渡すと問題順が変わりうる', () => {
       // 十分な回数試行して、少なくとも1回は順序が変わることを確認

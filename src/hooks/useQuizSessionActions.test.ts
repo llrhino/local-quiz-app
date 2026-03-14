@@ -231,6 +231,44 @@ describe('useQuizSessionActions', () => {
       expect(judgeResult!.isCorrect).toBe(true);
     });
 
+    it('正解時にstreakがインクリメントされる', async () => {
+      const { result } = renderHook(() => useQuizSessionActions());
+
+      await act(async () => {
+        await result.current.startQuiz('pack-1');
+      });
+
+      await act(async () => {
+        await result.current.submitAndSave('pack-1', 'a');
+      });
+
+      expect(useQuizSession.getState().streak).toBe(1);
+    });
+
+    it('不正解時にstreakがリセットされる', async () => {
+      const { result } = renderHook(() => useQuizSessionActions());
+
+      await act(async () => {
+        await result.current.startQuiz('pack-1');
+      });
+
+      // 1問目正解
+      await act(async () => {
+        await result.current.submitAndSave('pack-1', 'a');
+      });
+
+      act(() => {
+        useQuizSession.getState().nextQuestion();
+      });
+
+      // 2問目不正解
+      await act(async () => {
+        await result.current.submitAndSave('pack-1', 'false');
+      });
+
+      expect(useQuizSession.getState().streak).toBe(0);
+    });
+
     it('履歴保存失敗時もエラーを伝播しない（回答は記録済み）', async () => {
       mockSaveAnswerRecord.mockRejectedValue(new Error('DB error'));
 

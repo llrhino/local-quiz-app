@@ -1,16 +1,24 @@
 type Props = {
   current: number;
   total: number;
+  streak?: number;
 };
 
-export default function QuizProgress({ current, total }: Props) {
+export default function QuizProgress({ current, total, streak }: Props) {
   const percentage = (current / total) * 100;
 
   return (
     <div>
-      <p className="text-sm text-slate-600 dark:text-slate-400">
-        問題 {current} / {total}
-      </p>
+      <div className="flex items-center gap-2">
+        <p className="text-sm text-slate-600 dark:text-slate-400">
+          問題 {current} / {total}
+        </p>
+        {streak != null && streak >= 3 && (
+          <span className="text-sm font-medium text-amber-500">
+            {streak}連続正解
+          </span>
+        )}
+      </div>
       <div
         className="mt-2 h-2 w-full rounded-full bg-slate-200 dark:bg-slate-700"
         role="progressbar"

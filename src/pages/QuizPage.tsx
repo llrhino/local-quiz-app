@@ -20,7 +20,7 @@ export default function QuizPage() {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
   const { startQuiz, submitAndSave } = useQuizSessionActions();
-  const { questions, currentIndex, answers, isCompleted, resetSession, nextQuestion } =
+  const { questions, currentIndex, answers, isCompleted, streak, resetSession, nextQuestion } =
     useQuizSession();
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
@@ -88,7 +88,7 @@ export default function QuizPage() {
   return (
     <Card>
       <div className="flex items-center justify-between">
-        <QuizProgress current={currentIndex + 1} total={questions.length} />
+        <QuizProgress current={currentIndex + 1} total={questions.length} streak={streak} />
         <button
           className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
           onClick={() => setShowAbortDialog(true)}

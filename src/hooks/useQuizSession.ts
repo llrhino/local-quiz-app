@@ -16,10 +16,12 @@ type QuizSessionState = {
   currentIndex: number;
   answers: string[];
   isCompleted: boolean;
+  streak: number;
   startSession: (questions: Question[], shuffle?: boolean) => void;
   submitAnswer: (answer: string) => void;
   nextQuestion: () => void;
   resetSession: () => void;
+  updateStreak: (isCorrect: boolean) => void;
 };
 
 const initialState = {
@@ -27,6 +29,7 @@ const initialState = {
   currentIndex: 0,
   answers: [] as string[],
   isCompleted: false,
+  streak: 0,
 };
 
 export const useQuizSession = create<QuizSessionState>((set, get) => ({
@@ -38,6 +41,7 @@ export const useQuizSession = create<QuizSessionState>((set, get) => ({
       currentIndex: 0,
       answers: [],
       isCompleted: false,
+      streak: 0,
     }),
 
   submitAnswer: (answer) =>
@@ -58,4 +62,9 @@ export const useQuizSession = create<QuizSessionState>((set, get) => ({
   },
 
   resetSession: () => set(initialState),
+
+  updateStreak: (isCorrect) =>
+    set((state) => ({
+      streak: isCorrect ? state.streak + 1 : 0,
+    })),
 }));
