@@ -100,6 +100,11 @@ describe('QuizSummary', () => {
     expect(rateElement.className).toContain('tabular-nums');
   });
 
+  it('正答率のラベルを表示する', () => {
+    render(<QuizSummary {...defaultProps} />);
+    expect(screen.getByText('正答率')).toBeInTheDocument();
+  });
+
   it('正答率80%以上でemerald色を適用する', () => {
     // 3問中3問正解 = 100%
     render(

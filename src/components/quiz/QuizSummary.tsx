@@ -48,6 +48,7 @@ export default function QuizSummary({
         <p className="text-lg text-slate-700 dark:text-slate-300">
           {total}問中{correctCount}問正解
         </p>
+        <p className="text-sm text-slate-500 dark:text-slate-400">正答率</p>
         <p className={`text-5xl font-bold tabular-nums ${rateColorClass}`}>{accuracyRate}%</p>
       </div>
 
