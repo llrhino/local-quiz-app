@@ -49,6 +49,55 @@ describe('TrueFalseQuestion', () => {
     }
   });
 
+  describe('回答後のボタンハイライト', () => {
+    it('正解時に正解ボタンが緑系ハイライトされる', () => {
+      render(
+        <TrueFalseQuestion
+          question={question}
+          onAnswer={vi.fn()}
+          disabled
+          answerResult={{ userAnswer: 'true', isCorrect: true }}
+          correctAnswer="true"
+        />,
+      );
+
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).toContain('bg-emerald-100');
+      expect(trueButton.className).toContain('border-emerald-300');
+    });
+
+    it('不正解時にユーザーが選んだボタンが赤、正解ボタンが緑にハイライトされる', () => {
+      render(
+        <TrueFalseQuestion
+          question={question}
+          onAnswer={vi.fn()}
+          disabled
+          answerResult={{ userAnswer: 'false', isCorrect: false }}
+          correctAnswer="true"
+        />,
+      );
+
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).toContain('bg-emerald-100');
+
+      const falseButton = screen.getByRole('button', { name: '×' });
+      expect(falseButton.className).toContain('bg-red-100');
+      expect(falseButton.className).toContain('border-red-300');
+    });
+
+    it('answerResultが未指定の場合はハイライトなし', () => {
+      render(
+        <TrueFalseQuestion question={question} onAnswer={vi.fn()} />,
+      );
+
+      const buttons = screen.getAllByRole('button');
+      for (const button of buttons) {
+        expect(button.className).not.toContain('bg-emerald-100');
+        expect(button.className).not.toContain('bg-red-100');
+      }
+    });
+  });
+
   it('disabled時はボタンをクリックしてもonAnswerが呼ばれない', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();

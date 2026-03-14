@@ -91,6 +91,58 @@ describe('MultipleChoiceQuestion', () => {
     }
   });
 
+  describe('回答後の選択肢ハイライト', () => {
+    it('正解の選択肢に緑系ハイライトが適用される', () => {
+      render(
+        <MultipleChoiceQuestion
+          question={question}
+          onAnswer={vi.fn()}
+          disabled
+          answerResult={{ userAnswer: 'c', isCorrect: true }}
+          correctAnswer="c"
+        />,
+      );
+
+      const correctButton = screen.getByText('char').closest('button')!;
+      expect(correctButton.className).toContain('bg-emerald-100');
+      expect(correctButton.className).toContain('border-emerald-300');
+    });
+
+    it('ユーザーが選んだ不正解の選択肢に赤系ハイライトが適用される', () => {
+      render(
+        <MultipleChoiceQuestion
+          question={question}
+          onAnswer={vi.fn()}
+          disabled
+          answerResult={{ userAnswer: 'a', isCorrect: false }}
+          correctAnswer="c"
+        />,
+      );
+
+      // ユーザーが選んだ不正解
+      const wrongButton = screen.getByText('string').closest('button')!;
+      expect(wrongButton.className).toContain('bg-red-100');
+      expect(wrongButton.className).toContain('border-red-300');
+
+      // 正解の選択肢は緑
+      const correctButton = screen.getByText('char').closest('button')!;
+      expect(correctButton.className).toContain('bg-emerald-100');
+      expect(correctButton.className).toContain('border-emerald-300');
+    });
+
+    it('answerResultが未指定の場合はハイライトなし', () => {
+      render(
+        <MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />,
+      );
+
+      const buttons = screen.getAllByRole('button');
+      for (const button of buttons) {
+        expect(button.className).not.toContain('bg-emerald-100');
+        expect(button.className).not.toContain('bg-red-100');
+      }
+    });
+  });
+
   describe('選択肢シャッフル', () => {
     it('shuffleChoicesがfalseの場合、選択肢は定義順に表示される', () => {
       useAppSettingsStore.setState({ shuffleChoices: false });
@@ -134,6 +186,27 @@ describe('MultipleChoiceQuestion', () => {
 
       await user.click(screen.getByText('char'));
       expect(onAnswer).toHaveBeenCalledWith('c');
+    });
+
+    it('shuffleChoicesがtrueでも回答後ハイライトは正しい選択肢IDで適用される', () => {
+      useAppSettingsStore.setState({ shuffleChoices: true });
+      render(
+        <MultipleChoiceQuestion
+          question={question}
+          onAnswer={vi.fn()}
+          disabled
+          answerResult={{ userAnswer: 'a', isCorrect: false }}
+          correctAnswer="c"
+        />,
+      );
+
+      // 正解の選択肢（char = id:c）は緑ハイライト
+      const charButton = screen.getByText('char').closest('button')!;
+      expect(charButton.className).toContain('bg-emerald-100');
+
+      // ユーザーが選んだ不正解（string = id:a）は赤ハイライト
+      const stringButton = screen.getByText('string').closest('button')!;
+      expect(stringButton.className).toContain('bg-red-100');
     });
 
     it('shuffleChoicesがtrueの場合、キーボード操作はシャッフル後の位置に対応する', async () => {

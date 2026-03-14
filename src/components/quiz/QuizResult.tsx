@@ -12,7 +12,7 @@ export default function QuizResult({
   explanation,
 }: Props) {
   return (
-    <div className="space-y-2 rounded-3xl bg-slate-100 p-6 dark:bg-slate-800">
+    <div className={`space-y-2 rounded-3xl border p-6 ${isCorrect ? 'border-emerald-200 bg-emerald-50 dark:border-emerald-800 dark:bg-emerald-950' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950'}`}>
       <p className="text-lg font-semibold text-slate-950 dark:text-slate-50">
         {isCorrect ? '正解' : '不正解'}
       </p>

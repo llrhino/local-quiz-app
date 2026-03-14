@@ -103,6 +103,8 @@ export default function QuizPage() {
           question={currentQuestion}
           onAnswer={handleAnswer}
           disabled={answerResult !== null}
+          answerResult={answerResult ?? undefined}
+          correctAnswer={answerResult ? String(currentQuestion.answer) : undefined}
         />
       </div>
 

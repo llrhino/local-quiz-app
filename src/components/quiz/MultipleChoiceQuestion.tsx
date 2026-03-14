@@ -3,10 +3,17 @@ import { useCallback, useEffect, useMemo } from 'react';
 import type { Choice, MultipleChoiceQuestion as MultipleChoiceQuestionType } from '../../lib/types';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
 
+type AnswerResult = {
+  userAnswer: string;
+  isCorrect: boolean;
+};
+
 type Props = {
   question: MultipleChoiceQuestionType;
   onAnswer: (answer: string) => void;
   disabled?: boolean;
+  answerResult?: AnswerResult;
+  correctAnswer?: string;
 };
 
 function shuffleArray<T>(array: T[]): T[] {
@@ -18,10 +25,28 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
+function getChoiceClassName(choiceId: string, answerResult?: AnswerResult, correctAnswer?: string): string {
+  const base = 'rounded-2xl border px-4 py-3 text-left text-slate-800 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50';
+  const darkBase = 'dark:text-slate-200';
+
+  if (answerResult && correctAnswer) {
+    if (choiceId === correctAnswer) {
+      return `${base} border-emerald-300 bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900 ${darkBase}`;
+    }
+    if (choiceId === answerResult.userAnswer && !answerResult.isCorrect) {
+      return `${base} border-red-300 bg-red-100 dark:border-red-700 dark:bg-red-900 ${darkBase}`;
+    }
+  }
+
+  return `${base} border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${darkBase}`;
+}
+
 export default function MultipleChoiceQuestion({
   question,
   onAnswer,
   disabled,
+  answerResult,
+  correctAnswer,
 }: Props) {
   const shuffleChoices = useAppSettingsStore((s) => s.shuffleChoices);
 
@@ -52,7 +77,7 @@ export default function MultipleChoiceQuestion({
       <div className="grid gap-3">
         {displayChoices.map((choice, index) => (
           <button
-            className="rounded-2xl border border-slate-200 px-4 py-3 text-left text-slate-800 transition-transform hover:bg-slate-50 active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+            className={getChoiceClassName(choice.id, answerResult, correctAnswer)}
             disabled={disabled}
             key={choice.id}
             onClick={() => onAnswer(choice.id)}

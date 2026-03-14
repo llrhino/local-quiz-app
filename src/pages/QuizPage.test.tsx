@@ -116,6 +116,23 @@ describe('QuizPage', () => {
       expect(screen.getByText('正解')).toBeInTheDocument();
     });
 
+    it('回答後に選択肢がハイライトされる（正解:緑、不正解:赤）', async () => {
+      setupSessionState();
+      mockSubmitAndSave.mockResolvedValue({ isCorrect: false });
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      await user.click(screen.getByText('1'));
+
+      // ユーザーが選んだ不正解の選択肢（id:a）は赤ハイライト
+      const wrongButton = screen.getByText('1').closest('button')!;
+      expect(wrongButton.className).toContain('bg-red-100');
+
+      // 正解の選択肢（id:b = '2'）は緑ハイライト
+      const correctButton = screen.getByText('2').closest('button')!;
+      expect(correctButton.className).toContain('bg-emerald-100');
+    });
+
     it('不正解の場合は不正解と表示される', async () => {
       setupSessionState();
       mockSubmitAndSave.mockResolvedValue({ isCorrect: false });
