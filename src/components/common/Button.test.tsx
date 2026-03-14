@@ -11,6 +11,14 @@ describe('Button', () => {
     expect(button.className).toContain('transition-transform');
   });
 
+  it('reduced motion 向けのクラスが適用されている', () => {
+    render(<Button>テスト</Button>);
+    const button = screen.getByRole('button', { name: 'テスト' });
+    expect(button.className).toContain('motion-reduce:transition-none');
+    expect(button.className).toContain('motion-reduce:transform-none');
+    expect(button.className).toContain('motion-reduce:active:scale-100');
+  });
+
   it('フォーカスリングのクラスが適用されている', () => {
     render(<Button>テスト</Button>);
     const button = screen.getByRole('button', { name: 'テスト' });

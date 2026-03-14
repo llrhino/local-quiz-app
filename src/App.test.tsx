@@ -36,6 +36,10 @@ describe('App', () => {
     expect(
       screen.getByRole('button', { name: 'インポート' }),
     ).toBeInTheDocument();
+    expect(
+      screen.getByRole('link', { name: 'メインコンテンツへスキップ' }),
+    ).toHaveAttribute('href', '#main-content');
+    expect(document.querySelector('main#main-content')).not.toBeNull();
   });
 
   it('主要ページの見出しを日本語で表示する', () => {
