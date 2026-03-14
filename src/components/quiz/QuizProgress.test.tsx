@@ -53,4 +53,40 @@ describe('QuizProgress', () => {
     render(<QuizProgress current={3} total={10} />);
     expect(screen.queryByText(/連続正解/)).not.toBeInTheDocument();
   });
+
+  describe('ストリークの段階演出', () => {
+    it('streak 3-4 で amber 色とバウンスアニメーションが適用される', () => {
+      render(<QuizProgress current={4} total={10} streak={3} />);
+      const streakElement = screen.getByText('3連続正解');
+      expect(streakElement.className).toContain('text-amber-500');
+      expect(streakElement.className).toContain('animate-bounce-subtle');
+    });
+
+    it('streak 5-6 で orange 色とバウンスアニメーション、テキスト拡大が適用される', () => {
+      render(<QuizProgress current={6} total={10} streak={5} />);
+      const streakElement = screen.getByText('5連続正解');
+      expect(streakElement.className).toContain('text-orange-500');
+      expect(streakElement.className).toContain('animate-bounce-medium');
+      expect(streakElement.className).toContain('text-base');
+    });
+
+    it('streak 7以上 で red 色と強いバウンスアニメーション、さらにテキスト拡大が適用される', () => {
+      render(<QuizProgress current={8} total={10} streak={7} />);
+      const streakElement = screen.getByText('7連続正解');
+      expect(streakElement.className).toContain('text-red-500');
+      expect(streakElement.className).toContain('animate-bounce-strong');
+      expect(streakElement.className).toContain('text-lg');
+    });
+
+    it('streak 更新時にアニメーションが再生されるようkey属性が設定される', () => {
+      const { rerender } = render(<QuizProgress current={4} total={10} streak={3} />);
+      const el1 = screen.getByText('3連続正解');
+
+      rerender(<QuizProgress current={5} total={10} streak={4} />);
+      const el2 = screen.getByText('4連続正解');
+
+      // key が変わることで DOM 要素が再作成される
+      expect(el1).not.toBe(el2);
+    });
+  });
 });

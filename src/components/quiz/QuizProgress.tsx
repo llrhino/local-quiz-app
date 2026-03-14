@@ -4,6 +4,16 @@ type Props = {
   streak?: number;
 };
 
+function getStreakStyle(streak: number) {
+  if (streak >= 7) {
+    return 'text-lg font-bold text-red-500 animate-bounce-strong';
+  }
+  if (streak >= 5) {
+    return 'text-base font-bold text-orange-500 animate-bounce-medium';
+  }
+  return 'text-sm font-medium text-amber-500 animate-bounce-subtle';
+}
+
 export default function QuizProgress({ current, total, streak }: Props) {
   const percentage = (current / total) * 100;
 
@@ -14,7 +24,7 @@ export default function QuizProgress({ current, total, streak }: Props) {
           問題 {current} / {total}
         </p>
         {streak != null && streak >= 3 && (
-          <span className="text-sm font-medium text-amber-500">
+          <span key={streak} className={getStreakStyle(streak)}>
             {streak}連続正解
           </span>
         )}
