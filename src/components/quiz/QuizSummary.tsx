@@ -30,7 +30,15 @@ export default function QuizSummary({
 
   const correctCount = results.filter((r) => r.isCorrect).length;
   const total = questions.length;
-  const accuracyRate = total > 0 ? ((correctCount / total) * 100).toFixed(1) : '0.0';
+  const accuracyPercent = total > 0 ? (correctCount / total) * 100 : 0;
+  const accuracyRate = accuracyPercent.toFixed(1);
+
+  const rateColorClass =
+    accuracyPercent >= 80
+      ? 'text-emerald-600'
+      : accuracyPercent >= 50
+        ? 'text-amber-600'
+        : 'text-slate-600';
 
   return (
     <Card>
@@ -40,7 +48,7 @@ export default function QuizSummary({
         <p className="text-lg text-slate-700 dark:text-slate-300">
           {total}問中{correctCount}問正解
         </p>
-        <p className="text-3xl font-bold text-slate-900 dark:text-slate-100">{accuracyRate}%</p>
+        <p className={`text-5xl font-bold tabular-nums ${rateColorClass}`}>{accuracyRate}%</p>
       </div>
 
       <div className="mt-6">

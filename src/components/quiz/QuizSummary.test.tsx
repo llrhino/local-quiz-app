@@ -91,4 +91,43 @@ describe('QuizSummary', () => {
     await user.click(screen.getByRole('button', { name: 'もう一度挑戦する' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
+
+  it('正答率を大きく強調表示する', () => {
+    render(<QuizSummary {...defaultProps} />);
+    const rateElement = screen.getByText('66.7%');
+    expect(rateElement.className).toContain('text-5xl');
+    expect(rateElement.className).toContain('font-bold');
+    expect(rateElement.className).toContain('tabular-nums');
+  });
+
+  it('正答率80%以上でemerald色を適用する', () => {
+    // 3問中3問正解 = 100%
+    render(
+      <QuizSummary
+        {...defaultProps}
+        answers={['b', 'true', '東京']}
+      />,
+    );
+    const rateElement = screen.getByText('100.0%');
+    expect(rateElement.className).toContain('text-emerald-600');
+  });
+
+  it('正答率50-79%でamber色を適用する', () => {
+    // 3問中2問正解 = 66.7%
+    render(<QuizSummary {...defaultProps} />);
+    const rateElement = screen.getByText('66.7%');
+    expect(rateElement.className).toContain('text-amber-600');
+  });
+
+  it('正答率50%未満でslate色を適用する', () => {
+    // 3問中0問正解 = 0%
+    render(
+      <QuizSummary
+        {...defaultProps}
+        answers={['a', 'false', '大阪']}
+      />,
+    );
+    const rateElement = screen.getByText('0.0%');
+    expect(rateElement.className).toContain('text-slate-600');
+  });
 });
