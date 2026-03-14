@@ -85,6 +85,7 @@ function setupSessionState(overrides: Partial<ReturnType<typeof useQuizSession>>
 describe('QuizPage', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    mockStartQuiz.mockResolvedValue(undefined);
     mockSubmitAndSave.mockResolvedValue({ isCorrect: true });
   });
 
@@ -93,6 +94,14 @@ describe('QuizPage', () => {
       setupSessionState({ questions: [], currentIndex: 0 });
       renderQuizPage('pack-1');
       expect(mockStartQuiz).toHaveBeenCalledWith('pack-1');
+    });
+
+    it('startQuizがエラーを投げた場合エラーメッセージを表示する', async () => {
+      setupSessionState({ questions: [], currentIndex: 0 });
+      mockStartQuiz.mockRejectedValue(new Error('パックが見つかりません'));
+      renderQuizPage('pack-1');
+
+      expect(await screen.findByText('問題の読み込みに失敗しました')).toBeInTheDocument();
     });
   });
 

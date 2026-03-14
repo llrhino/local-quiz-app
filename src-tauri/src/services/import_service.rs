@@ -774,6 +774,22 @@ mod tests {
     }
 
     #[test]
+    fn サンプルパックjsonをインポートできる() {
+        let connection = open_test_connection();
+        let sample_json = include_str!("../../resources/sample-quiz-pack.json");
+        let result = import_quiz_pack_from_str(sample_json, &connection);
+        assert!(
+            result.is_ok(),
+            "サンプルパックのインポートに失敗: {}",
+            result.unwrap_err()
+        );
+
+        let pack = result.unwrap();
+        assert_eq!(pack.id, "sample-security-basics");
+        assert!(!pack.questions.is_empty());
+    }
+
+    #[test]
     fn 複数のエラーがまとめて報告される() {
         let questions = vec![
             serde_json::json!({

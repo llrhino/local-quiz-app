@@ -10,12 +10,12 @@
       "type": "multiple_choice",
       "question": "AESの鍵長として正しくないものはどれか？",
       "choices": [
-        { "id": "a", "text": "128ビット" },
-        { "id": "b", "text": "192ビット" },
-        { "id": "c", "text": "256ビット" },
-        { "id": "d", "text": "512ビット" }
+        { "text": "128ビット" },
+        { "text": "192ビット" },
+        { "text": "256ビット" },
+        { "text": "512ビット" }
       ],
-      "answer": "d",
+      "answer": 3,
       "explanation": "AESの鍵長は128, 192, 256ビットの3種類です。512ビットは規格に存在しません。"
     },
     {
@@ -37,12 +37,12 @@
       "type": "multiple_choice",
       "question": "HTTPSで使用されるデフォルトのポート番号は？",
       "choices": [
-        { "id": "a", "text": "80" },
-        { "id": "b", "text": "443" },
-        { "id": "c", "text": "8080" },
-        { "id": "d", "text": "22" }
+        { "text": "80" },
+        { "text": "443" },
+        { "text": "8080" },
+        { "text": "22" }
       ],
-      "answer": "b",
+      "answer": 1,
       "explanation": "HTTPSのデフォルトポートは443番です。HTTPは80番、SSHは22番です。"
     },
     {
@@ -57,12 +57,12 @@
       "type": "multiple_choice",
       "question": "SQLインジェクション攻撃の主な対策として最も適切なものは？",
       "choices": [
-        { "id": "a", "text": "パスワードの定期変更" },
-        { "id": "b", "text": "プリペアドステートメントの使用" },
-        { "id": "c", "text": "ファイアウォールの導入" },
-        { "id": "d", "text": "データのバックアップ" }
+        { "text": "パスワードの定期変更" },
+        { "text": "プリペアドステートメントの使用" },
+        { "text": "ファイアウォールの導入" },
+        { "text": "データのバックアップ" }
       ],
-      "answer": "b",
+      "answer": 1,
       "explanation": "プリペアドステートメント（パラメータ化クエリ）を使用することで、SQL文とパラメータが分離され、インジェクションを防止できます。"
     },
     {
@@ -84,12 +84,12 @@
       "type": "multiple_choice",
       "question": "パスワードのハッシュ化に推奨されるアルゴリズムは？",
       "choices": [
-        { "id": "a", "text": "MD5" },
-        { "id": "b", "text": "SHA-1" },
-        { "id": "c", "text": "bcrypt" },
-        { "id": "d", "text": "Base64" }
+        { "text": "MD5" },
+        { "text": "SHA-1" },
+        { "text": "bcrypt" },
+        { "text": "Base64" }
       ],
-      "answer": "c",
+      "answer": 2,
       "explanation": "bcryptはパスワードハッシュ用に設計されたアルゴリズムです。MD5やSHA-1は脆弱性が発見されており、Base64はエンコーディングであってハッシュではありません。"
     },
     {

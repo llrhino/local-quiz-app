@@ -26,10 +26,13 @@ export default function QuizPage() {
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
   const [showAbortDialog, setShowAbortDialog] = useState(false);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
     if (packId) {
-      startQuiz(packId);
+      startQuiz(packId).catch(() => {
+        setLoadError(true);
+      });
     }
   }, [packId, startQuiz]);
 
@@ -86,6 +89,16 @@ export default function QuizPage() {
         onGoHome={handleGoHome}
         onRetry={handleRetry}
       />
+    );
+  }
+
+  // 問題の読み込みに失敗した場合
+  if (loadError) {
+    return (
+      <Card className="space-y-4">
+        <p className="text-red-600 dark:text-red-400">問題の読み込みに失敗しました</p>
+        <Button onClick={handleGoHome}>パック一覧に戻る</Button>
+      </Card>
     );
   }
 
