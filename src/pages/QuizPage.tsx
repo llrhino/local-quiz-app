@@ -10,6 +10,7 @@ import QuizResult from '../components/quiz/QuizResult';
 import QuizSummary from '../components/quiz/QuizSummary';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { useQuizSessionActions } from '../hooks/useQuizSessionActions';
+import { formatDisplayAnswer } from '../lib/formatAnswer';
 
 type AnswerResult = {
   isCorrect: boolean;
@@ -112,8 +113,8 @@ export default function QuizPage() {
         <div className="mt-4 space-y-4">
           <QuizResult
             isCorrect={answerResult.isCorrect}
-            correctAnswer={String(currentQuestion.answer)}
-            userAnswer={answerResult.userAnswer}
+            correctAnswer={formatDisplayAnswer(currentQuestion, String(currentQuestion.answer))}
+            userAnswer={formatDisplayAnswer(currentQuestion, answerResult.userAnswer)}
             explanation={currentQuestion.explanation}
           />
           <Button onClick={handleNext}>次の問題へ</Button>
