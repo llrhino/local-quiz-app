@@ -103,7 +103,7 @@ export default function QuizPage() {
       <div className="flex items-center justify-between">
         <QuizProgress current={currentIndex + 1} total={questions.length} streak={streak} />
         <button
-          className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2 rounded"
           onClick={() => setShowAbortDialog(true)}
           type="button"
         >
@@ -143,7 +143,7 @@ export default function QuizPage() {
         </p>
         <div className="mt-4 flex justify-end gap-3">
           <button
-            className="rounded-full px-4 py-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700"
+            className="rounded-full px-4 py-2 text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
             onClick={() => setShowAbortDialog(false)}
             type="button"
           >

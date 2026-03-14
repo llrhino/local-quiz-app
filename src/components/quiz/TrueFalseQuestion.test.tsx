@@ -49,6 +49,17 @@ describe('TrueFalseQuestion', () => {
     }
   });
 
+  it('○×ボタンにフォーカスリングのクラスが適用されている', () => {
+    render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    for (const button of buttons) {
+      expect(button.className).toContain('focus-visible:outline-none');
+      expect(button.className).toContain('focus-visible:ring-2');
+      expect(button.className).toContain('focus-visible:ring-sky-500');
+      expect(button.className).toContain('focus-visible:ring-offset-2');
+    }
+  });
+
   describe('回答後のボタンハイライト', () => {
     it('正解時に正解ボタンが緑系ハイライトされる', () => {
       render(

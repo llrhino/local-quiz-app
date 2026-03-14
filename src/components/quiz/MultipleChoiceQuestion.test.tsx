@@ -91,6 +91,17 @@ describe('MultipleChoiceQuestion', () => {
     }
   });
 
+  it('選択肢ボタンにフォーカスリングのクラスが適用されている', () => {
+    render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+    const buttons = screen.getAllByRole('button');
+    for (const button of buttons) {
+      expect(button.className).toContain('focus-visible:outline-none');
+      expect(button.className).toContain('focus-visible:ring-2');
+      expect(button.className).toContain('focus-visible:ring-sky-500');
+      expect(button.className).toContain('focus-visible:ring-offset-2');
+    }
+  });
+
   describe('回答後の選択肢ハイライト', () => {
     it('正解の選択肢に緑系ハイライトが適用される', () => {
       render(

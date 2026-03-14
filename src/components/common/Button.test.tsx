@@ -10,4 +10,13 @@ describe('Button', () => {
     expect(button.className).toContain('active:scale-[0.97]');
     expect(button.className).toContain('transition-transform');
   });
+
+  it('フォーカスリングのクラスが適用されている', () => {
+    render(<Button>テスト</Button>);
+    const button = screen.getByRole('button', { name: 'テスト' });
+    expect(button.className).toContain('focus-visible:outline-none');
+    expect(button.className).toContain('focus-visible:ring-2');
+    expect(button.className).toContain('focus-visible:ring-sky-500');
+    expect(button.className).toContain('focus-visible:ring-offset-2');
+  });
 });

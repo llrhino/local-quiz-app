@@ -14,7 +14,7 @@ type Props = {
 };
 
 function getButtonClassName(value: string, answerResult?: AnswerResult, correctAnswer?: string): string {
-  const base = 'flex-1 rounded-2xl border px-4 py-3 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50';
+  const base = 'flex-1 rounded-2xl border px-4 py-3 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2';
   const darkBase = 'dark:text-slate-200';
 
   if (answerResult && correctAnswer) {
