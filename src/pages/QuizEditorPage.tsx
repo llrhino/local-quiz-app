@@ -7,6 +7,12 @@ import { exportQuizPack, openSaveFileDialog, saveQuizPack } from '../lib/command
 import type { Question, QuestionType } from '../lib/types';
 
 const FIRST_HINT_STORAGE_KEY = 'quiz-editor-first-hint-dismissed';
+const QUESTION_TYPE_OPTIONS: Array<{ value: QuestionType; label: string }> = [
+  { value: 'multiple_choice', label: '択一選択' },
+  { value: 'multi_select', label: '複数選択' },
+  { value: 'true_false', label: '○×問題' },
+  { value: 'text_input', label: 'テキスト入力' },
+];
 
 type BaseEditorQuestion = {
   id: string;
@@ -194,6 +200,10 @@ function buildSaveQuestion(question: EditorQuestion): Question {
   };
 }
 
+function handleEditorFieldKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+  event.stopPropagation();
+}
+
 export default function QuizEditorPage() {
   const { packId } = useParams();
   const isEditMode = Boolean(packId);
@@ -289,11 +299,12 @@ export default function QuizEditorPage() {
     setSubmitted(true);
     setNotification(null);
 
-    const firstErrorIndex = packNameError
+    const hasPackNameError = !name.trim();
+    const firstErrorIndex = hasPackNameError
       ? -1
       : questionErrors.findIndex((errors) => hasQuestionErrors(errors));
 
-    if (packNameError || firstErrorIndex !== -1) {
+    if (hasPackNameError || firstErrorIndex !== -1) {
       if (firstErrorIndex >= 0) {
         questionRefs.current[questions[firstErrorIndex]?.id]?.scrollIntoView?.({
           behavior: 'smooth',
@@ -431,10 +442,12 @@ export default function QuizEditorPage() {
                     ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/40'
                     : 'border-slate-200 bg-white dark:border-slate-700'
                 }`}
+                lang="ja"
                 onChange={(event) => {
                   setName(event.target.value);
                   markDirty();
                 }}
+                onKeyDown={handleEditorFieldKeyDown}
                 value={name}
               />
               {packNameError && <span className="text-sm text-red-600 dark:text-red-400">{packNameError}</span>}
@@ -444,10 +457,12 @@ export default function QuizEditorPage() {
               <span>説明</span>
               <textarea
                 className="min-h-28 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                lang="ja"
                 onChange={(event) => {
                   setDescription(event.target.value);
                   markDirty();
                 }}
+                onKeyDown={handleEditorFieldKeyDown}
                 value={description}
               />
             </label>
@@ -517,17 +532,24 @@ export default function QuizEditorPage() {
                 <label className="space-y-2 text-sm font-medium text-slate-700 dark:text-slate-200">
                   <span>問題タイプ</span>
                   <select
-                    className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                    className="w-full appearance-none rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                    lang="ja"
                     onChange={(event) =>
                       updateQuestion(question.id, (current) =>
                         changeQuestionType(current, event.target.value as QuestionType),
                       )}
+                    onKeyDown={handleEditorFieldKeyDown}
                     value={question.type}
                   >
-                    <option value="multiple_choice">multiple_choice</option>
-                    <option value="multi_select">multi_select</option>
-                    <option value="true_false">true_false</option>
-                    <option value="text_input">text_input</option>
+                    {QUESTION_TYPE_OPTIONS.map((option) => (
+                      <option
+                        className="bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-50"
+                        key={option.value}
+                        value={option.value}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </label>
 
@@ -540,12 +562,14 @@ export default function QuizEditorPage() {
                           ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/40'
                           : 'border-slate-200 bg-white dark:border-slate-700'
                       }`}
+                      lang="ja"
                       onChange={(event) =>
                         updateQuestion(question.id, (current) => ({
                           ...current,
                           question: event.target.value,
                         }))
                       }
+                      onKeyDown={handleEditorFieldKeyDown}
                       value={question.question}
                     />
                     {cardHasErrors && errors.question && (
@@ -598,6 +622,7 @@ export default function QuizEditorPage() {
                                   ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/40'
                                   : 'border-slate-200 bg-white dark:border-slate-700'
                               }`}
+                              lang="ja"
                               onChange={(event) =>
                                 updateQuestion(question.id, (current) => {
                                   if (current.type !== 'multiple_choice' && current.type !== 'multi_select') {
@@ -609,6 +634,7 @@ export default function QuizEditorPage() {
                                   return { ...current, choices: nextChoices };
                                 })
                               }
+                              onKeyDown={handleEditorFieldKeyDown}
                               value={choice}
                             />
                           </label>
@@ -720,6 +746,7 @@ export default function QuizEditorPage() {
                             ? 'border-red-300 bg-red-50 dark:border-red-700 dark:bg-red-950/40'
                             : 'border-slate-200 bg-white dark:border-slate-700'
                         }`}
+                        lang="ja"
                         onChange={(event) =>
                           updateQuestion(question.id, (current) =>
                             current.type === 'text_input'
@@ -727,6 +754,7 @@ export default function QuizEditorPage() {
                               : current,
                           )
                         }
+                        onKeyDown={handleEditorFieldKeyDown}
                         value={question.answer}
                       />
                       {cardHasErrors && errors.answer && (
@@ -739,12 +767,14 @@ export default function QuizEditorPage() {
                     <span>解説</span>
                     <textarea
                       className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900 outline-none transition focus:ring-2 focus:ring-sky-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-50"
+                      lang="ja"
                       onChange={(event) =>
                         updateQuestion(question.id, (current) => ({
                           ...current,
                           explanation: event.target.value,
                         }))
                       }
+                      onKeyDown={handleEditorFieldKeyDown}
                       value={question.explanation}
                     />
                   </label>

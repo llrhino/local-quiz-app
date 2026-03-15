@@ -11,6 +11,7 @@ import QuizSummary from '../components/quiz/QuizSummary';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { useQuizSessionActions } from '../hooks/useQuizSessionActions';
 import { formatDisplayAnswer } from '../lib/formatAnswer';
+import { shouldIgnoreGlobalShortcut } from '../lib/keyboard';
 
 type AnswerResult = {
   isCorrect: boolean;
@@ -56,6 +57,9 @@ export default function QuizPage() {
   useEffect(() => {
     if (!answerResult) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (shouldIgnoreGlobalShortcut(e)) {
+        return;
+      }
       if (e.key === 'Enter') {
         e.preventDefault();
         handleNext();

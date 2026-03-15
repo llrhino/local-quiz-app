@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
+import LinkText from '../components/common/LinkText';
 import Modal from '../components/common/Modal';
 import { useQuizPacks } from '../hooks/useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
@@ -42,7 +43,7 @@ function QuizPackCard({
         </div>
         {pack.description && (
           <p className="text-sm text-slate-600 dark:text-slate-400">
-            {pack.description}
+            <LinkText text={pack.description} />
           </p>
         )}
         <p className="text-sm text-slate-500 dark:text-slate-400">

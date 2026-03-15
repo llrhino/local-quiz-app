@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react';
+import { fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -71,7 +72,14 @@ describe('QuizEditorPage', () => {
     await user.click(screen.getByRole('button', { name: '設問を追加' }));
 
     const card = screen.getByTestId('question-card-q1');
-    expect(within(card).getByLabelText('問題タイプ')).toHaveValue('multiple_choice');
+    const typeSelect = within(card).getByLabelText('問題タイプ');
+    expect(typeSelect).toHaveValue('multiple_choice');
+    expect(within(typeSelect).getByRole('option', { name: '択一選択' })).toBeInTheDocument();
+    expect(within(typeSelect).getByRole('option', { name: '複数選択' })).toBeInTheDocument();
+    expect(within(typeSelect).getByRole('option', { name: '○×問題' })).toBeInTheDocument();
+    expect(within(typeSelect).getByRole('option', { name: 'テキスト入力' })).toBeInTheDocument();
+    expect(typeSelect.className).toContain('dark:bg-slate-900');
+    expect(typeSelect.className).toContain('dark:text-slate-50');
     expect(within(card).getByLabelText('設問文')).toBeInTheDocument();
     expect(within(card).getAllByLabelText(/選択肢 \d+/)).toHaveLength(2);
     expect(within(card).getByRole('button', { name: '選択肢を追加' })).toBeInTheDocument();
@@ -92,6 +100,26 @@ describe('QuizEditorPage', () => {
     expect(within(card).getByLabelText('設問文')).toHaveValue('S3の説明として正しいものはどれか');
     expect(within(card).getByLabelText('解説')).toHaveValue('解説文');
     expect(within(card).getByLabelText('正解テキスト')).toBeInTheDocument();
+  });
+
+  it('エディタ内の入力中キー操作はグローバルへ伝播しない', async () => {
+    const user = userEvent.setup();
+    const windowKeydownListener = vi.fn();
+    window.addEventListener('keydown', windowKeydownListener);
+
+    renderQuizEditorPage();
+    await user.click(screen.getByRole('button', { name: '設問を追加' }));
+
+    const nameInput = screen.getByRole('textbox', { name: 'パック名' });
+    const card = screen.getByTestId('question-card-q1');
+    const questionTextarea = within(card).getByLabelText('設問文');
+
+    fireEvent.keyDown(nameInput, { key: 'Enter' });
+    fireEvent.keyDown(questionTextarea, { key: 'Enter' });
+
+    expect(windowKeydownListener).not.toHaveBeenCalled();
+
+    window.removeEventListener('keydown', windowKeydownListener);
   });
 
   it('設問の削除と並び替えができる', async () => {
@@ -130,6 +158,27 @@ describe('QuizEditorPage', () => {
     expect(screen.getByText('少なくとも2つの選択肢を入力してください')).toBeInTheDocument();
     expect(screen.getByText('正解を指定してください')).toBeInTheDocument();
     expect(card.className).toContain('border-red-300');
+    expect(mockSaveQuizPack).not.toHaveBeenCalled();
+  });
+
+  it('パック名が未入力または空白のみの場合は保存しない', async () => {
+    const user = userEvent.setup();
+    renderQuizEditorPage();
+
+    await user.click(screen.getByRole('button', { name: '設問を追加' }));
+    const card = screen.getByTestId('question-card-q1');
+    await user.selectOptions(within(card).getByLabelText('問題タイプ'), 'true_false');
+    await user.type(within(card).getByLabelText('設問文'), 'Goは静的型付け言語である');
+    await user.click(within(card).getByLabelText('正しい'));
+
+    await user.click(screen.getByRole('button', { name: '保存' }));
+    expect(screen.getByText('パック名を入力してください')).toBeInTheDocument();
+    expect(mockSaveQuizPack).not.toHaveBeenCalled();
+
+    await user.clear(screen.getByRole('textbox', { name: /^パック名/ }));
+    await user.type(screen.getByRole('textbox', { name: /^パック名/ }), '   ');
+    await user.click(screen.getByRole('button', { name: '保存' }));
+    expect(screen.getByText('パック名を入力してください')).toBeInTheDocument();
     expect(mockSaveQuizPack).not.toHaveBeenCalled();
   });
 

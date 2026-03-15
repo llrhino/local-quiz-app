@@ -85,6 +85,20 @@ describe('LinkText', () => {
     expect(screen.getByText('）において')).toBeInTheDocument();
   });
 
+  it('改行を含むテキストが改行付きで表示される', () => {
+    const { container } = render(<LinkText text={'1行目\n2行目\n3行目'} />);
+    const brs = container.querySelectorAll('br');
+    expect(brs).toHaveLength(2);
+    expect(container.textContent).toBe('1行目2行目3行目');
+  });
+
+  it('URLと改行が混在するテキストが正しく表示される', () => {
+    const { container } = render(<LinkText text={'詳細は\nhttps://example.com\nを参照'} />);
+    const brs = container.querySelectorAll('br');
+    expect(brs).toHaveLength(2);
+    expect(screen.getByRole('button', { name: 'https://example.com' })).toBeInTheDocument();
+  });
+
   it('リンクにはアンダーラインのスタイルが適用される', () => {
     render(<LinkText text="https://example.com" />);
     const link = screen.getByRole('button', { name: 'https://example.com' });

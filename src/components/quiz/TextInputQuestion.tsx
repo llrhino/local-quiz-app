@@ -42,6 +42,7 @@ export default function TextInputQuestion({
             ref={inputRef}
             className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             disabled={disabled}
+            lang="ja"
             onChange={(e) => setValue(e.target.value)}
             placeholder="解答を入力"
             type="text"

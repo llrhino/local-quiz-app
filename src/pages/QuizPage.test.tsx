@@ -291,6 +291,29 @@ describe('QuizPage', () => {
       // 次のテキスト入力問題が自動送信されていないことを確認
       expect(mockSubmitAndSave).toHaveBeenCalledTimes(1);
     });
+
+    it('入力欄フォーカス中またはIME変換中のEnterでは次の問題に進まない', async () => {
+      setupSessionState({
+        questions: textQuestions,
+        currentIndex: 1,
+      });
+      renderQuizPage();
+
+      const input = screen.getByPlaceholderText('解答を入力');
+      input.focus();
+
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      });
+      expect(mockNextQuestion).not.toHaveBeenCalled();
+
+      act(() => {
+        const imeEnter = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true });
+        Object.defineProperty(imeEnter, 'isComposing', { value: true });
+        window.dispatchEvent(imeEnter);
+      });
+      expect(mockNextQuestion).not.toHaveBeenCalled();
+    });
   });
 
   describe('中断機能', () => {

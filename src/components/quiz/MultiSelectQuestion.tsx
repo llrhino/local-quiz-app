@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { MultiSelectQuestion as MultiSelectQuestionType } from '../../lib/types';
+import { shouldIgnoreGlobalShortcut } from '../../lib/keyboard';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
 import LinkText from '../common/LinkText';
 
@@ -114,7 +115,7 @@ export default function MultiSelectQuestion({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (disabled) return;
+      if (disabled || shouldIgnoreGlobalShortcut(e)) return;
       const num = Number(e.key);
       if (num >= 1 && num <= displayChoices.length) {
         toggleChoice(displayChoices[num - 1].originalIndex);

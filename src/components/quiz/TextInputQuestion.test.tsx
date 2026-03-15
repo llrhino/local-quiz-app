@@ -101,4 +101,9 @@ describe('TextInputQuestion', () => {
 
     expect(screen.getByPlaceholderText('解答を入力')).toBeDisabled();
   });
+
+  it('日本語入力向けに lang 属性を持つ', () => {
+    render(<TextInputQuestion question={question} onAnswer={vi.fn()} />);
+    expect(screen.getByPlaceholderText('解答を入力')).toHaveAttribute('lang', 'ja');
+  });
 });

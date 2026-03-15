@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 type Props = {
@@ -8,6 +10,21 @@ type Props = {
 // URLに有効な文字のみマッチ（日本語や全角記号はURLの一部として扱わない）
 const URL_REGEX = /(https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+)/g;
 
+// 改行文字を <br /> に変換する
+function renderWithLineBreaks(str: string, keyPrefix: string): ReactNode[] {
+  const lines = str.split('\n');
+  const result: ReactNode[] = [];
+  lines.forEach((line, i) => {
+    if (i > 0) {
+      result.push(<br key={`${keyPrefix}-br-${i}`} />);
+    }
+    if (line) {
+      result.push(<span key={`${keyPrefix}-${i}`}>{line}</span>);
+    }
+  });
+  return result;
+}
+
 export default function LinkText({ text, fallback }: Props) {
   if (text === undefined) {
     return <>{fallback}</>;
@@ -16,7 +33,7 @@ export default function LinkText({ text, fallback }: Props) {
   const parts = text.split(URL_REGEX);
 
   if (parts.length === 1) {
-    return <>{text}</>;
+    return <>{renderWithLineBreaks(text, 'solo')}</>;
   }
 
   return (
@@ -32,7 +49,7 @@ export default function LinkText({ text, fallback }: Props) {
             {part}
           </button>
         ) : (
-          <span key={index}>{part}</span>
+          <span key={index}>{renderWithLineBreaks(part, String(index))}</span>
         ),
       )}
     </>

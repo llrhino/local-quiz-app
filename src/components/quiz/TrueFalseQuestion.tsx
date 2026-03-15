@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { TrueFalseQuestion as TrueFalseQuestionType } from '../../lib/types';
+import { shouldIgnoreGlobalShortcut } from '../../lib/keyboard';
 import LinkText from '../common/LinkText';
 
 type AnswerResult = {
@@ -52,7 +53,7 @@ export default function TrueFalseQuestion({
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (disabled) return;
+      if (disabled || shouldIgnoreGlobalShortcut(e)) return;
       if (e.key === '1') onAnswer('true');
       if (e.key === '2') onAnswer('false');
       if (e.key === 'ArrowLeft') {

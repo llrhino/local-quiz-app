@@ -158,6 +158,24 @@ describe('HomePage', () => {
       expect(screen.getByText('5問')).toBeInTheDocument();
     });
 
+    it('説明文の改行が保持される', () => {
+      mockUseQuizPacks.mockReturnValue({
+        packs: [{ ...pack1, description: '1行目\n2行目' }],
+        loading: false,
+        error: null,
+        importing: false,
+        refresh: mockRefresh,
+        importPack: mockImportPack,
+        seedSample: mockSeedSample,
+        deletePack: mockDeletePack,
+        exportPack: mockExportPack,
+      });
+      renderHomePage();
+      const card = screen.getByTestId('pack-card');
+      const brs = card.querySelectorAll('br');
+      expect(brs).toHaveLength(1);
+    });
+
     it('各カードに開始・履歴・編集・エクスポート・削除が表示される', () => {
       renderHomePage();
       const packCards = screen.getAllByTestId('pack-card');

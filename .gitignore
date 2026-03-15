@@ -6,3 +6,7 @@ src-tauri/gen/
 
 .DS_Store
 Thumbs.db
+
+.agents
+.claude
+docs
