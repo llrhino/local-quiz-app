@@ -10,14 +10,16 @@ type RepoResult<T> = Result<T, Box<dyn Error>>;
 
 pub fn insert_quiz_pack(connection: &Connection, pack: &QuizPack) -> RepoResult<()> {
     connection.execute(
-        "INSERT INTO quiz_packs (id, name, description, question_count, imported_at)
-         VALUES (?1, ?2, ?3, ?4, ?5);",
+        "INSERT INTO quiz_packs (id, name, description, question_count, source, imported_at, updated_at)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7);",
         params![
             pack.id,
             pack.name,
             pack.description.as_deref().unwrap_or(""),
             pack.questions.len() as i64,
-            pack.imported_at
+            pack.source,
+            pack.imported_at,
+            pack.updated_at
         ],
     )?;
 
@@ -30,8 +32,10 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             qp.id,
             qp.name,
             qp.description,
+            qp.source,
             qp.question_count,
             qp.imported_at,
+            qp.updated_at,
             MAX(lh.answered_at) AS last_studied_at,
             CASE
                 WHEN qp.question_count > 0
@@ -43,7 +47,7 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             END AS all_correct
          FROM quiz_packs qp
          LEFT JOIN learning_history lh ON lh.pack_id = qp.id
-         GROUP BY qp.id, qp.name, qp.description, qp.question_count, qp.imported_at
+         GROUP BY qp.id, qp.name, qp.description, qp.source, qp.question_count, qp.imported_at, qp.updated_at
          ORDER BY qp.imported_at DESC, qp.id ASC;",
     )?;
 
@@ -57,10 +61,12 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             } else {
                 Some(description)
             },
-            question_count: row.get::<_, i64>(3)? as usize,
-            imported_at: row.get(4)?,
-            last_studied_at: row.get(5)?,
-            all_correct: row.get::<_, i64>(6)? != 0,
+            source: row.get(3)?,
+            question_count: row.get::<_, i64>(4)? as usize,
+            imported_at: row.get(5)?,
+            updated_at: row.get(6)?,
+            last_studied_at: row.get(7)?,
+            all_correct: row.get::<_, i64>(8)? != 0,
         })
     })?;
 
@@ -70,7 +76,7 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
 pub fn get_quiz_pack(connection: &Connection, pack_id: &str) -> RepoResult<Option<QuizPack>> {
     let pack = connection
         .query_row(
-            "SELECT id, name, description, imported_at
+            "SELECT id, name, description, source, imported_at, updated_at
              FROM quiz_packs
              WHERE id = ?1;",
             [pack_id],
@@ -84,7 +90,9 @@ pub fn get_quiz_pack(connection: &Connection, pack_id: &str) -> RepoResult<Optio
                     } else {
                         Some(description)
                     },
-                    imported_at: row.get(3)?,
+                    source: row.get(3)?,
+                    imported_at: row.get(4)?,
+                    updated_at: row.get(5)?,
                     questions: Vec::new(),
                 })
             },

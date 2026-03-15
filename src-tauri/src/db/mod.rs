@@ -130,14 +130,24 @@ mod tests {
     fn records_schema_version_after_migrations() {
         let (database, path) = open_test_database();
 
-        let user_version: i64 = database
+        let (user_version, source_exists, updated_at_exists): (i64, bool, bool) = database
             .with_connection(|connection| {
                 let version = connection.query_row("PRAGMA user_version;", [], |row| row.get(0))?;
-                Ok(version)
+                let columns: Vec<String> = connection
+                    .prepare("PRAGMA table_info(quiz_packs);")?
+                    .query_map([], |row| row.get(1))?
+                    .collect::<Result<Vec<_>, _>>()?;
+                Ok((
+                    version,
+                    columns.iter().any(|column| column == "source"),
+                    columns.iter().any(|column| column == "updated_at"),
+                ))
             })
             .expect("schema version should be readable");
 
-        assert_eq!(user_version, 2);
+        assert_eq!(user_version, 3);
+        assert!(source_exists);
+        assert!(updated_at_exists);
 
         std::fs::remove_file(path).expect("test database file should be removed");
     }

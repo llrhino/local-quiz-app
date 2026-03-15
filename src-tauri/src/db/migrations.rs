@@ -1,6 +1,6 @@
 use rusqlite::{params, Connection};
 
-const CURRENT_SCHEMA_VERSION: i64 = 2;
+const CURRENT_SCHEMA_VERSION: i64 = 3;
 
 pub fn run(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
     let current_version: i64 =
@@ -19,6 +19,10 @@ pub fn run(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
 
     if current_version < 2 {
         migrate_to_v2(connection)?;
+    }
+
+    if current_version < 3 {
+        migrate_to_v3(connection)?;
     }
 
     Ok(())
@@ -94,6 +98,17 @@ fn migrate_to_v2(connection: &Connection) -> Result<(), Box<dyn std::error::Erro
     backfill_session_ids(connection)?;
 
     connection.execute_batch("PRAGMA user_version = 2;")?;
+
+    Ok(())
+}
+
+/// V3: quiz_packs に source / updated_at カラムを追加する。
+fn migrate_to_v3(connection: &Connection) -> Result<(), Box<dyn std::error::Error>> {
+    connection.execute_batch(
+        "ALTER TABLE quiz_packs ADD COLUMN source TEXT NOT NULL DEFAULT 'imported';
+         ALTER TABLE quiz_packs ADD COLUMN updated_at TEXT DEFAULT NULL;
+         PRAGMA user_version = 3;",
+    )?;
 
     Ok(())
 }
@@ -235,5 +250,58 @@ mod tests {
         // 空文字ではないこと
         assert!(!session_ids[0].is_empty());
         assert!(!session_ids[2].is_empty());
+    }
+
+    #[test]
+    fn migrate_v3_adds_source_and_updated_at_columns() {
+        let conn = open_v1_connection();
+        migrate_to_v2(&conn).expect("v2 migration should succeed");
+        migrate_to_v3(&conn).expect("v3 migration should succeed");
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .expect("schema version should be readable");
+        assert_eq!(version, 3);
+
+        conn.execute(
+            "INSERT INTO quiz_packs (id, name, question_count, imported_at)
+             VALUES ('pack-v3', 'test', 0, '2026-01-01T00:00:00Z');",
+            [],
+        )
+        .expect("insert into v3 schema should succeed");
+
+        let (source, updated_at): (String, Option<String>) = conn
+            .query_row(
+                "SELECT source, updated_at FROM quiz_packs WHERE id = 'pack-v3';",
+                [],
+                |row| Ok((row.get(0)?, row.get(1)?)),
+            )
+            .expect("new columns should be readable");
+
+        assert_eq!(source, "imported");
+        assert_eq!(updated_at, None);
+    }
+
+    #[test]
+    fn run_migrates_v2_database_to_v3() {
+        let conn = open_v1_connection();
+        migrate_to_v2(&conn).expect("v2 migration should succeed");
+
+        run(&conn).expect("run should migrate to latest schema");
+
+        let version: i64 = conn
+            .query_row("PRAGMA user_version;", [], |row| row.get(0))
+            .expect("schema version should be readable");
+        assert_eq!(version, 3);
+
+        let columns: Vec<String> = conn
+            .prepare("PRAGMA table_info(quiz_packs);")
+            .expect("table info query should prepare")
+            .query_map([], |row| row.get(1))
+            .expect("table info query should execute")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("column names should be collected");
+        assert!(columns.contains(&"source".to_string()));
+        assert!(columns.contains(&"updated_at".to_string()));
     }
 }

@@ -24,7 +24,9 @@ pub(crate) mod test_helpers {
             id: "security-pack".to_string(),
             name: "セキュリティ基礎".to_string(),
             description: Some("基本用語の確認".to_string()),
+            source: "imported".to_string(),
             imported_at: "2026-03-10T09:00:00Z".to_string(),
+            updated_at: None,
             questions: vec![
                 Question::MultipleChoice {
                     id: "q1".to_string(),
