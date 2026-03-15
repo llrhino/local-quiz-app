@@ -25,10 +25,7 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'ローカルクイズアプリ' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: '学習パック' }),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('heading', { name: 'パック管理' }),
+      screen.getByRole('heading', { name: 'クイズパック' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('オフライン学習'),
