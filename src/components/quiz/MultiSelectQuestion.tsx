@@ -32,7 +32,8 @@ function shuffleArray<T>(array: T[]): T[] {
 
 function getChoiceClassName(
   choiceIndex: string,
-  isSelected: boolean,
+  isChecked: boolean,
+  isFocused: boolean,
   answerResult?: AnswerResult,
   correctAnswer?: string,
 ): string {
@@ -51,11 +52,12 @@ function getChoiceClassName(
     }
   }
 
-  const selectedClass = isSelected
-    ? 'ring-2 ring-sky-500 ring-offset-2 border-sky-300 bg-sky-50 dark:border-sky-600 dark:bg-sky-900/30'
-    : 'border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700';
+  const focusRing = isFocused ? 'ring-2 ring-sky-500 ring-offset-2' : '';
+  const checkedClass = isChecked
+    ? `border-sky-300 bg-sky-50 dark:border-sky-600 dark:bg-sky-900/30 ${focusRing}`
+    : `border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${focusRing}`;
 
-  return `${base} ${selectedClass} ${darkBase}`;
+  return `${base} ${checkedClass} ${darkBase}`;
 }
 
 export default function MultiSelectQuestion({
@@ -75,16 +77,18 @@ export default function MultiSelectQuestion({
     [question.id, shuffleChoices],
   );
 
-  const [selectedIndices, setSelectedIndices] = useState<Set<number>>(new Set());
+  const [checkedIndices, setCheckedIndices] = useState<Set<number>>(new Set());
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   useEffect(() => {
-    setSelectedIndices(new Set());
+    setCheckedIndices(new Set());
+    setFocusedIndex(0);
   }, [question.id]);
 
   const toggleChoice = useCallback(
     (originalIndex: number) => {
       if (disabled) return;
-      setSelectedIndices((prev) => {
+      setCheckedIndices((prev) => {
         const next = new Set(prev);
         if (next.has(originalIndex)) {
           next.delete(originalIndex);
@@ -98,10 +102,14 @@ export default function MultiSelectQuestion({
   );
 
   const submitAnswer = useCallback(() => {
-    if (disabled || selectedIndices.size === 0) return;
-    const sorted = [...selectedIndices].sort((a, b) => a - b);
+    if (disabled) return;
+    if (checkedIndices.size === 0) {
+      onAnswer('');
+      return;
+    }
+    const sorted = [...checkedIndices].sort((a, b) => a - b);
     onAnswer(sorted.join(','));
-  }, [disabled, selectedIndices, onAnswer]);
+  }, [disabled, checkedIndices, onAnswer]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -110,12 +118,22 @@ export default function MultiSelectQuestion({
       if (num >= 1 && num <= displayChoices.length) {
         toggleChoice(displayChoices[num - 1].originalIndex);
       }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        setFocusedIndex((prev) => Math.min(displayChoices.length - 1, prev + 1));
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        setFocusedIndex((prev) => Math.max(0, prev - 1));
+      }
+      if (e.key === ' ') {
+        e.preventDefault();
+        toggleChoice(displayChoices[focusedIndex].originalIndex);
+      }
       if (e.key === 'Enter') {
         e.preventDefault();
         submitAnswer();
       }
     },
-    [disabled, displayChoices, toggleChoice, submitAnswer],
+    [disabled, displayChoices, toggleChoice, submitAnswer, focusedIndex],
   );
 
   useEffect(() => {
@@ -131,7 +149,8 @@ export default function MultiSelectQuestion({
           <button
             className={getChoiceClassName(
               String(choice.originalIndex),
-              selectedIndices.has(choice.originalIndex),
+              checkedIndices.has(choice.originalIndex),
+              index === focusedIndex,
               answerResult,
               correctAnswer,
             )}
@@ -149,7 +168,7 @@ export default function MultiSelectQuestion({
       </div>
       <button
         className="w-full rounded-2xl bg-sky-500 px-4 py-3 font-medium text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-50 dark:bg-sky-600 dark:hover:bg-sky-700"
-        disabled={disabled || selectedIndices.size === 0}
+        disabled={disabled}
         onClick={submitAnswer}
         type="button"
       >
