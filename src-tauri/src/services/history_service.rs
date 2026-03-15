@@ -27,7 +27,7 @@ pub fn get_pack_statistics(
     history_repo::get_pack_statistics(connection, pack_id)
 }
 
-/// 弱点問題を抽出する（2回以上回答かつ正答率の低い順）
+/// 弱点問題を抽出する（2回以上回答かつ直近5回の正答率80%未満、正答率の低い順）
 pub fn get_weak_questions(
     connection: &Connection,
     pack_id: &str,
