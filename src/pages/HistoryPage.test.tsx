@@ -181,6 +181,66 @@ describe('HistoryPage', () => {
       expect(screen.getByText('クロスサイトスクリプティング')).toBeInTheDocument();
     });
 
+    it('回答5回以上かつ正答率60%の弱点問題に「あと少しで克服」ラベルを表示する', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: sampleStatistics,
+        weakQuestions: [
+          {
+            questionId: 'q1',
+            questionText: '克服に近い問題',
+            answerCount: 5,
+            accuracyRate: 0.6,
+            lastUserAnswer: '回答A',
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.getByText('あと少しで克服')).toBeInTheDocument();
+    });
+
+    it('回答5回未満の弱点問題には「あと少しで克服」ラベルを表示しない', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: sampleStatistics,
+        weakQuestions: [
+          {
+            questionId: 'q1',
+            questionText: '回答不足の問題',
+            answerCount: 4,
+            accuracyRate: 0.75,
+            lastUserAnswer: '回答A',
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.queryByText('あと少しで克服')).not.toBeInTheDocument();
+    });
+
+    it('正答率60%未満の弱点問題には「あと少しで克服」ラベルを表示しない', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: sampleStatistics,
+        weakQuestions: [
+          {
+            questionId: 'q1',
+            questionText: '正答率低い問題',
+            answerCount: 5,
+            accuracyRate: 0.4,
+            lastUserAnswer: '回答A',
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.queryByText('あと少しで克服')).not.toBeInTheDocument();
+    });
+
     it('弱点問題がない場合はメッセージを表示する', () => {
       mockUseHistoryData.mockReturnValue({
         sessions: sampleSessions,

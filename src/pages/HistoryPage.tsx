@@ -130,9 +130,16 @@ export default function HistoryPage() {
                     className="rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
                     data-testid="weak-question-item"
                   >
-                    <p className="font-medium text-slate-900 dark:text-slate-100">
-                      {wq.questionText}
-                    </p>
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-medium text-slate-900 dark:text-slate-100">
+                        {wq.questionText}
+                      </p>
+                      {wq.answerCount >= 5 && wq.accuracyRate >= 0.6 && (
+                        <span className="shrink-0 rounded-full bg-sky-100 px-2.5 py-0.5 text-xs font-medium text-sky-700 dark:bg-sky-900 dark:text-sky-300">
+                          あと少しで克服
+                        </span>
+                      )}
+                    </div>
                     <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                       <span>{wq.answerCount}回回答</span>
                       <span>正答率: <span className="text-slate-700 dark:text-slate-300">{formatPercent(wq.accuracyRate)}</span></span>
