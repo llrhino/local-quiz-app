@@ -5,6 +5,23 @@ use crate::db::Database;
 use crate::models::AppSettings;
 use crate::services::settings_service;
 
+fn sanitize_default_file_name(default_name: &str) -> String {
+    let trimmed = default_name.trim();
+    let sanitized: String = trimmed
+        .chars()
+        .map(|ch| match ch {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            _ => ch,
+        })
+        .collect();
+
+    if sanitized.trim().is_empty() {
+        "quiz-pack.json".to_string()
+    } else {
+        sanitized
+    }
+}
+
 #[tauri::command]
 pub fn get_settings(database: State<'_, Database>) -> Result<AppSettings, String> {
     database
@@ -49,11 +66,12 @@ pub async fn open_file_dialog(app: AppHandle) -> Option<String> {
 #[tauri::command]
 pub async fn open_save_file_dialog(app: AppHandle, default_name: String) -> Option<String> {
     let (tx, rx) = std::sync::mpsc::channel::<Option<String>>();
+    let sanitized_name = sanitize_default_file_name(&default_name);
 
     app.dialog()
         .file()
         .add_filter("JSON ファイル", &["json"])
-        .set_file_name(&default_name)
+        .set_file_name(&sanitized_name)
         .save_file(move |file| {
             let _ = tx.send(file.map(|path| path.to_string()));
         });
@@ -61,4 +79,22 @@ pub async fn open_save_file_dialog(app: AppHandle, default_name: String) -> Opti
     tauri::async_runtime::spawn_blocking(move || rx.recv().unwrap_or(None))
         .await
         .unwrap_or(None)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::sanitize_default_file_name;
+
+    #[test]
+    fn 危険な文字をアンダースコアに置換する() {
+        assert_eq!(
+            sanitize_default_file_name(r#"  無題:/\*?"<>|.json  "#),
+            "無題_________.json"
+        );
+    }
+
+    #[test]
+    fn 空文字になった場合はフォールバック名を返す() {
+        assert_eq!(sanitize_default_file_name("   "), "quiz-pack.json");
+    }
 }

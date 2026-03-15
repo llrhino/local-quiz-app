@@ -9,13 +9,13 @@ import type { QuizPackSummary } from '../lib/types';
 
 export default function HomePage() {
   const { packs, loading, error, importing, importPack, seedSample, deletePack, exportPack } = useQuizPacks();
-  const [notification, setNotification] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QuizPackSummary | null>(null);
 
   const handleImport = async () => {
     setNotification(null);
     const err = await importPack();
-    if (err) setNotification(err);
+    if (err) setNotification({ type: 'error', message: err });
   };
 
   const handleDelete = async () => {
@@ -23,7 +23,7 @@ export default function HomePage() {
     const packId = deleteTarget.id;
     setDeleteTarget(null);
     const err = await deletePack(packId);
-    if (err) setNotification(err);
+    if (err) setNotification({ type: 'error', message: err });
   };
 
   return (
@@ -46,10 +46,14 @@ export default function HomePage() {
 
       {notification && (
         <div
-          className="whitespace-pre-line rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300"
+          className={`whitespace-pre-line rounded-2xl border px-4 py-3 text-sm ${
+            notification.type === 'success'
+              ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+              : 'border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-300'
+          }`}
           data-testid="notification"
         >
-          {notification}
+          {notification.message}
         </div>
       )}
 
@@ -72,7 +76,7 @@ export default function HomePage() {
             onClick={async () => {
               setNotification(null);
               const err = await seedSample();
-              if (err) setNotification(err);
+              if (err) setNotification({ type: 'error', message: err });
             }}
           >
             サンプルを試す
@@ -131,7 +135,15 @@ export default function HomePage() {
               onClick={async () => {
                 setNotification(null);
                 const err = await exportPack(pack.id, pack.name);
-                if (err) setNotification(err);
+                if (err) {
+                  setNotification({ type: 'error', message: err });
+                  return;
+                }
+
+                setNotification({
+                  type: 'success',
+                  message: `「${pack.name}」をエクスポートしました。`,
+                });
               }}
               type="button"
             >

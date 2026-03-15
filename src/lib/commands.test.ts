@@ -19,6 +19,8 @@ import {
   getSettings,
   updateSetting,
   openFileDialog,
+  openSaveFileDialog,
+  exportQuizPack,
 } from './commands';
 import type { AnswerRecord } from './types';
 
@@ -135,6 +137,25 @@ describe('commands.ts Tauriコマンドラッパー', () => {
       mockInvoke.mockResolvedValue('/path/to/file.json');
       await openFileDialog();
       expect(mockInvoke).toHaveBeenCalledWith('open_file_dialog');
+    });
+
+    it('openSaveFileDialog は open_save_file_dialog を defaultName 引数で呼ぶ', async () => {
+      mockInvoke.mockResolvedValue('/path/to/export.json');
+      await openSaveFileDialog('unsafe:name?.json');
+      expect(mockInvoke).toHaveBeenCalledWith('open_save_file_dialog', {
+        defaultName: 'unsafe:name?.json',
+      });
+    });
+  });
+
+  describe('エクスポート', () => {
+    it('exportQuizPack は export_quiz_pack を packId と filePath 引数で呼ぶ', async () => {
+      mockInvoke.mockResolvedValue(undefined);
+      await exportQuizPack('pack-1', '/path/to/export.json');
+      expect(mockInvoke).toHaveBeenCalledWith('export_quiz_pack', {
+        packId: 'pack-1',
+        filePath: '/path/to/export.json',
+      });
     });
   });
 });

@@ -9,6 +9,7 @@ import type { QuizPackSummary } from '../lib/types';
 const mockImportPack = vi.fn();
 const mockSeedSample = vi.fn();
 const mockDeletePack = vi.fn();
+const mockExportPack = vi.fn();
 const mockRefresh = vi.fn();
 
 vi.mock('../hooks/useQuizPacks', () => ({
@@ -62,6 +63,7 @@ describe('HomePage', () => {
       importPack: mockImportPack,
       seedSample: mockSeedSample,
       deletePack: mockDeletePack,
+      exportPack: mockExportPack,
     });
   });
 
@@ -83,6 +85,7 @@ describe('HomePage', () => {
         refresh: mockRefresh,
         importPack: mockImportPack,
         deletePack: mockDeletePack,
+        exportPack: mockExportPack,
       });
       renderHomePage();
       expect(screen.getByText('読み込み中...')).toBeInTheDocument();
@@ -99,6 +102,7 @@ describe('HomePage', () => {
         refresh: mockRefresh,
         importPack: mockImportPack,
         deletePack: mockDeletePack,
+        exportPack: mockExportPack,
       });
       renderHomePage();
       expect(screen.getByText('パック一覧の取得に失敗しました')).toBeInTheDocument();
@@ -116,6 +120,7 @@ describe('HomePage', () => {
         importPack: mockImportPack,
         seedSample: mockSeedSample,
         deletePack: mockDeletePack,
+        exportPack: mockExportPack,
       });
     });
 
@@ -159,6 +164,7 @@ describe('HomePage', () => {
       const firstCard = packCards[0];
       expect(within(firstCard).getByRole('link', { name: '開始' })).toBeInTheDocument();
       expect(within(firstCard).getByRole('link', { name: '履歴' })).toBeInTheDocument();
+      expect(within(firstCard).getByRole('button', { name: 'エクスポート' })).toBeInTheDocument();
       expect(within(firstCard).getByRole('button', { name: '削除' })).toBeInTheDocument();
     });
 
@@ -305,6 +311,41 @@ describe('HomePage', () => {
       await user.click(screen.getByRole('button', { name: '削除する' }));
 
       expect(screen.getByText('削除に失敗しました')).toBeInTheDocument();
+    });
+  });
+
+  describe('エクスポート機能', () => {
+    it('エクスポートボタンをクリックすると exportPack が呼ばれる', async () => {
+      const user = userEvent.setup();
+      mockExportPack.mockResolvedValue(null);
+      renderHomePage();
+
+      const packCards = screen.getAllByTestId('pack-card');
+      await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
+
+      expect(mockExportPack).toHaveBeenCalledWith('pack-1', 'JavaScript基礎');
+    });
+
+    it('エクスポート成功時に成功メッセージを表示する', async () => {
+      const user = userEvent.setup();
+      mockExportPack.mockResolvedValue(null);
+      renderHomePage();
+
+      const packCards = screen.getAllByTestId('pack-card');
+      await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
+
+      expect(screen.getByText('「JavaScript基礎」をエクスポートしました。')).toBeInTheDocument();
+    });
+
+    it('エクスポート失敗時にエラーメッセージを表示する', async () => {
+      const user = userEvent.setup();
+      mockExportPack.mockResolvedValue('エクスポートに失敗しました');
+      renderHomePage();
+
+      const packCards = screen.getAllByTestId('pack-card');
+      await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
+
+      expect(screen.getByText('エクスポートに失敗しました')).toBeInTheDocument();
     });
   });
 });

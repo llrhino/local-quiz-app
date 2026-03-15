@@ -18,6 +18,7 @@ struct ExportPackInfo {
     name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     description: Option<String>,
+    schema_version: String,
 }
 
 /// クイズパックをインポート可能なJSON文字列に変換する
@@ -31,6 +32,7 @@ pub fn export_quiz_pack_to_json(connection: &Connection, pack_id: &str) -> Resul
             id: pack.id,
             name: pack.name,
             description: pack.description,
+            schema_version: "1.1".to_string(),
         },
         questions: pack.questions,
     };
@@ -194,6 +196,124 @@ mod tests {
         let connection2 = open_test_connection();
         let result = import_service::import_quiz_pack_from_str(&content, &connection2);
         assert!(result.is_ok(), "ファイルからの再インポートに成功すること");
+    }
+
+    #[test]
+    fn エクスポートjsonにschema_version_1_1が含まれる() {
+        let connection = open_test_connection();
+        setup_pack(&connection);
+
+        let json = export_quiz_pack_to_json(&connection, "test-pack")
+            .expect("エクスポートに成功すること");
+
+        let value: serde_json::Value =
+            serde_json::from_str(&json).expect("JSONパースに成功すること");
+
+        assert_eq!(
+            value.get("pack").and_then(|pack| pack.get("schema_version")),
+            Some(&serde_json::Value::String("1.1".to_string()))
+        );
+    }
+
+    #[test]
+    fn 四種類の問題を含むjsonを往復して同一データを復元できる() {
+        let json = r#"{
+            "pack": {
+                "id": "round-trip-pack",
+                "name": "総合問題集 2026",
+                "description": "日本語を含む round-trip 検証"
+            },
+            "questions": [
+                {
+                    "id": "mc-1",
+                    "type": "multiple_choice",
+                    "question": "Rustの所有権で正しい説明は？",
+                    "choices": [
+                        {"text": "複数の可変参照を常に許可する"},
+                        {"text": "同時に1つの可変参照だけを許可する"}
+                    ],
+                    "answer": 1,
+                    "explanation": ""
+                },
+                {
+                    "id": "ms-1",
+                    "type": "multi_select",
+                    "question": "HTTPメソッドをすべて選んでください",
+                    "choices": [
+                        {"text": "GET"},
+                        {"text": "POST"},
+                        {"text": "STYLE"}
+                    ],
+                    "answer": [0, 1]
+                },
+                {
+                    "id": "tf-1",
+                    "type": "true_false",
+                    "question": "SQLiteは組み込み型DBである",
+                    "answer": true,
+                    "explanation": ""
+                },
+                {
+                    "id": "text-1",
+                    "type": "text_input",
+                    "question": "日本の首都をひらがなで答えてください",
+                    "answer": "とうきょう"
+                }
+            ]
+        }"#;
+        let source_connection = open_test_connection();
+        import_service::import_quiz_pack_from_str(json, &source_connection)
+            .expect("初回インポートに成功すること");
+
+        let exported = export_quiz_pack_to_json(&source_connection, "round-trip-pack")
+            .expect("エクスポートに成功すること");
+
+        let destination_connection = open_test_connection();
+        let reimported = import_service::import_quiz_pack_from_str(&exported, &destination_connection)
+            .expect("再インポートに成功すること");
+
+        let original: serde_json::Value =
+            serde_json::from_str(json).expect("元JSONのパースに成功すること");
+        let exported_value: serde_json::Value =
+            serde_json::from_str(&exported).expect("エクスポートJSONのパースに成功すること");
+
+        assert_eq!(reimported.id, "round-trip-pack");
+        assert_eq!(reimported.name, "総合問題集 2026");
+        assert_eq!(
+            reimported.description,
+            Some("日本語を含む round-trip 検証".to_string())
+        );
+        assert_eq!(reimported.questions.len(), 4);
+        assert_eq!(exported_value["questions"][0]["type"], original["questions"][0]["type"]);
+        assert_eq!(exported_value["questions"][0]["question"], original["questions"][0]["question"]);
+        assert_eq!(exported_value["questions"][0]["answer"], original["questions"][0]["answer"]);
+        assert_eq!(exported_value["questions"][0]["choices"], original["questions"][0]["choices"]);
+        assert_eq!(exported_value["questions"][1]["type"], original["questions"][1]["type"]);
+        assert_eq!(exported_value["questions"][1]["question"], original["questions"][1]["question"]);
+        assert_eq!(exported_value["questions"][1]["answer"], original["questions"][1]["answer"]);
+        assert_eq!(exported_value["questions"][1]["choices"], original["questions"][1]["choices"]);
+        assert_eq!(exported_value["questions"][2]["type"], original["questions"][2]["type"]);
+        assert_eq!(exported_value["questions"][2]["question"], original["questions"][2]["question"]);
+        assert_eq!(exported_value["questions"][2]["answer"], original["questions"][2]["answer"]);
+        assert_eq!(exported_value["questions"][3]["type"], original["questions"][3]["type"]);
+        assert_eq!(exported_value["questions"][3]["question"], original["questions"][3]["question"]);
+        assert_eq!(exported_value["questions"][3]["answer"], original["questions"][3]["answer"]);
+        assert!(
+            exported_value["questions"][1]["explanation"].is_null(),
+            "省略された解説は null に正規化されること"
+        );
+        assert!(
+            exported_value["questions"][0]["explanation"].is_null(),
+            "空文字の解説は null に正規化されること"
+        );
+        assert!(
+            exported_value["questions"][2]["explanation"].is_null(),
+            "空文字の解説は null に正規化されること"
+        );
+        assert!(
+            exported_value["questions"][3]["explanation"].is_null(),
+            "省略された解説は null に正規化されること"
+        );
     }
 
     #[test]

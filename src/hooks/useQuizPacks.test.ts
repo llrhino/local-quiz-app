@@ -6,6 +6,8 @@ vi.mock('../lib/commands', () => ({
   importQuizPack: vi.fn(),
   deleteQuizPack: vi.fn(),
   openFileDialog: vi.fn(),
+  openSaveFileDialog: vi.fn(),
+  exportQuizPack: vi.fn(),
   seedSamplePack: vi.fn(),
 }));
 
@@ -14,6 +16,8 @@ import {
   importQuizPack,
   deleteQuizPack,
   openFileDialog,
+  openSaveFileDialog,
+  exportQuizPack,
   seedSamplePack,
 } from '../lib/commands';
 import { useQuizPacks } from './useQuizPacks';
@@ -23,6 +27,8 @@ const mockListQuizPacks = vi.mocked(listQuizPacks);
 const mockImportQuizPack = vi.mocked(importQuizPack);
 const mockDeleteQuizPack = vi.mocked(deleteQuizPack);
 const mockOpenFileDialog = vi.mocked(openFileDialog);
+const mockOpenSaveFileDialog = vi.mocked(openSaveFileDialog);
+const mockExportQuizPack = vi.mocked(exportQuizPack);
 const mockSeedSamplePack = vi.mocked(seedSamplePack);
 
 const pack1: QuizPackSummary = {
@@ -368,6 +374,53 @@ describe('useQuizPacks', () => {
       });
 
       expect(errorMsg).toBeNull();
+    });
+  });
+
+  describe('exportPack', () => {
+    it('保存先を選んでエクスポートする', async () => {
+      mockOpenSaveFileDialog.mockResolvedValue('/path/to/export.json');
+      mockExportQuizPack.mockResolvedValue(undefined);
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.exportPack('pack-1', 'JavaScript:基礎?');
+      });
+
+      expect(mockOpenSaveFileDialog).toHaveBeenCalledWith('JavaScript:基礎?.json');
+      expect(mockExportQuizPack).toHaveBeenCalledWith('pack-1', '/path/to/export.json');
+      expect(errorMsg).toBeNull();
+    });
+
+    it('保存ダイアログをキャンセルした場合は何もしない', async () => {
+      mockOpenSaveFileDialog.mockResolvedValue(null);
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      await act(async () => {
+        await result.current.exportPack('pack-1', 'テスト');
+      });
+
+      expect(mockExportQuizPack).not.toHaveBeenCalled();
+    });
+
+    it('エクスポート失敗時にエラーメッセージを返す', async () => {
+      mockOpenSaveFileDialog.mockResolvedValue('/path/to/export.json');
+      mockExportQuizPack.mockRejectedValue(new Error('ファイルの書き込みに失敗しました'));
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.exportPack('pack-1', 'テスト');
+      });
+
+      expect(errorMsg).toBe('ファイルの書き込みに失敗しました');
     });
   });
 });
