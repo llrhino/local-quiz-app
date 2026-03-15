@@ -7,6 +7,98 @@ import Modal from '../components/common/Modal';
 import { useQuizPacks } from '../hooks/useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
 
+type PackCardMode = 'learning' | 'management';
+
+function QuizPackCard({
+  mode,
+  onDelete,
+  onExport,
+  pack,
+}: {
+  mode: PackCardMode;
+  onDelete: (pack: QuizPackSummary) => void;
+  onExport: (pack: QuizPackSummary) => Promise<void>;
+  pack: QuizPackSummary;
+}) {
+  return (
+    <Card
+      className="space-y-3"
+      data-testid={mode === 'learning' ? 'learning-pack-card' : 'management-pack-card'}
+    >
+      <div className="space-y-1">
+        <div className="flex items-center gap-2">
+          <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
+            {pack.name}
+          </h3>
+          {pack.allCorrect && (
+            <span
+              className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900 dark:text-amber-200"
+              data-testid="all-correct-badge"
+            >
+              <svg
+                aria-hidden="true"
+                className="h-3.5 w-3.5"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+              </svg>
+              全問正解
+            </span>
+          )}
+        </div>
+        {pack.description && (
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            {pack.description}
+          </p>
+        )}
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          {pack.questionCount}問
+        </p>
+      </div>
+      {mode === 'learning' ? (
+        <div className="flex gap-2">
+          <Link
+            className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            to={`/quiz/${pack.id}`}
+          >
+            開始
+          </Link>
+          <Link
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            to={`/history/${pack.id}`}
+          >
+            履歴
+          </Link>
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          <Link
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            to={`/editor/${pack.id}`}
+          >
+            編集
+          </Link>
+          <button
+            className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            onClick={() => onExport(pack)}
+            type="button"
+          >
+            エクスポート
+          </button>
+          <button
+            className="inline-flex items-center justify-center rounded-full border border-red-300 px-4 py-2 font-medium text-red-700 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+            onClick={() => onDelete(pack)}
+            type="button"
+          >
+            削除
+          </button>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 export default function HomePage() {
   const { packs, loading, error, importing, importPack, seedSample, deletePack, exportPack } = useQuizPacks();
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
@@ -26,21 +118,60 @@ export default function HomePage() {
     if (err) setNotification({ type: 'error', message: err });
   };
 
+  const handleExport = async (pack: QuizPackSummary) => {
+    setNotification(null);
+    const err = await exportPack(pack.id, pack.name);
+    if (err) {
+      setNotification({ type: 'error', message: err });
+      return;
+    }
+
+    setNotification({
+      type: 'success',
+      message: `「${pack.name}」をエクスポートしました。`,
+    });
+  };
+
   return (
     <div className="space-y-6">
       <Card className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
+          <p className="text-sm tracking-widest text-sky-700 dark:text-sky-400">
+            学習エリア
+          </p>
+          <h2 className="text-3xl font-semibold text-slate-950 dark:text-slate-50">
+            学習パック
+          </h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">
+            学習用の操作だけを上段に集約しています。
+          </p>
+        </div>
+      </Card>
+
+      <Card className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <p className="text-sm tracking-widest text-sky-700 dark:text-sky-400">
               パック管理
             </p>
             <h2 className="text-3xl font-semibold text-slate-950 dark:text-slate-50">
-              クイズパック
+              パック管理
             </h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              作成・編集・入出力などの管理操作をまとめています。
+            </p>
           </div>
-          <Button disabled={importing} onClick={handleImport}>
-            {importing ? 'インポート中...' : 'インポート'}
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
+              to="/editor"
+            >
+              新規作成
+            </Link>
+            <Button disabled={importing} onClick={handleImport}>
+              {importing ? 'インポート中...' : 'インポート'}
+            </Button>
+          </div>
         </div>
       </Card>
 
@@ -84,81 +215,40 @@ export default function HomePage() {
         </Card>
       )}
 
-      {packs.map((pack) => (
-        <Card key={pack.id} className="space-y-3" data-testid="pack-card">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h3 className="text-lg font-semibold text-slate-950 dark:text-slate-50">
-                {pack.name}
-              </h3>
-              {pack.allCorrect && (
-                <span
-                  className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800 dark:bg-amber-900 dark:text-amber-200"
-                  data-testid="all-correct-badge"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                  </svg>
-                  全問正解
-                </span>
-              )}
-            </div>
-            {pack.description && (
-              <p className="text-sm text-slate-600 dark:text-slate-400">
-                {pack.description}
-              </p>
-            )}
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {pack.questionCount}問
-            </p>
+      {!loading && !error && packs.length > 0 && (
+        <>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {packs.map((pack) => (
+              <QuizPackCard
+                key={`learning-${pack.id}`}
+                mode="learning"
+                onDelete={setDeleteTarget}
+                onExport={handleExport}
+                pack={pack}
+              />
+            ))}
           </div>
-          <div className="flex gap-2">
-            <Link
-              className="inline-flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
-              to={`/quiz/${pack.id}`}
-            >
-              開始
-            </Link>
-            <Link
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
-              to={`/history/${pack.id}`}
-            >
-              履歴
-            </Link>
-            <button
-              className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
-              onClick={async () => {
-                setNotification(null);
-                const err = await exportPack(pack.id, pack.name);
-                if (err) {
-                  setNotification({ type: 'error', message: err });
-                  return;
-                }
 
-                setNotification({
-                  type: 'success',
-                  message: `「${pack.name}」をエクスポートしました。`,
-                });
-              }}
-              type="button"
-            >
-              エクスポート
-            </button>
-            <button
-              className="inline-flex items-center justify-center rounded-full border border-red-300 px-4 py-2 font-medium text-red-700 transition hover:bg-red-50 dark:border-red-700 dark:text-red-400 dark:hover:bg-red-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2"
-              onClick={() => setDeleteTarget(pack)}
-              type="button"
-            >
-              削除
-            </button>
+          <div className="space-y-4">
+            <div className="border-t border-slate-200 pt-6 dark:border-slate-700">
+              <h3 className="text-xl font-semibold text-slate-950 dark:text-slate-50">
+                管理対象パック
+              </h3>
+            </div>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {packs.map((pack) => (
+                <QuizPackCard
+                  key={`management-${pack.id}`}
+                  mode="management"
+                  onDelete={setDeleteTarget}
+                  onExport={handleExport}
+                  pack={pack}
+                />
+              ))}
+            </div>
           </div>
-        </Card>
-      ))}
+        </>
+      )}
 
       <Modal
         isOpen={deleteTarget !== null}

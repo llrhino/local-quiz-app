@@ -68,9 +68,11 @@ describe('HomePage', () => {
   });
 
   describe('ヘッダー部分', () => {
-    it('見出しとインポートボタンを表示する', () => {
+    it('学習エリアとパック管理エリアの見出しを表示する', () => {
       renderHomePage();
-      expect(screen.getByRole('heading', { name: 'クイズパック' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '学習パック' })).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: 'パック管理' })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: '新規作成' })).toHaveAttribute('href', '/editor');
       expect(screen.getByRole('button', { name: 'インポート' })).toBeInTheDocument();
     });
   });
@@ -147,37 +149,52 @@ describe('HomePage', () => {
   });
 
   describe('パック一覧表示', () => {
-    it('パック名、説明、問題数を表示する', () => {
+    it('各エリアに同じパックが表示される', () => {
       renderHomePage();
-      expect(screen.getByText('JavaScript基礎')).toBeInTheDocument();
-      expect(screen.getByText('JSの基本を学ぶ')).toBeInTheDocument();
-      expect(screen.getByText('10問')).toBeInTheDocument();
-      expect(screen.getByText('Rust入門')).toBeInTheDocument();
-      expect(screen.getByText('5問')).toBeInTheDocument();
+
+      expect(screen.getAllByText('JavaScript基礎')).toHaveLength(2);
+      expect(screen.getAllByText('JSの基本を学ぶ')).toHaveLength(2);
+      expect(screen.getAllByText('10問')).toHaveLength(2);
+      expect(screen.getAllByText('Rust入門')).toHaveLength(2);
+      expect(screen.getAllByText('5問')).toHaveLength(2);
     });
 
-    it('各パックに開始・履歴・削除ボタンがある', () => {
+    it('学習エリアのカードには開始と履歴のみが表示される', () => {
       renderHomePage();
-      const packCards = screen.getAllByTestId('pack-card');
-      expect(packCards).toHaveLength(2);
+      const learningCards = screen.getAllByTestId('learning-pack-card');
+      expect(learningCards).toHaveLength(2);
 
-      const firstCard = packCards[0];
+      const firstCard = learningCards[0];
       expect(within(firstCard).getByRole('link', { name: '開始' })).toBeInTheDocument();
       expect(within(firstCard).getByRole('link', { name: '履歴' })).toBeInTheDocument();
+      expect(within(firstCard).queryByRole('button', { name: '編集' })).not.toBeInTheDocument();
+      expect(within(firstCard).queryByRole('button', { name: 'エクスポート' })).not.toBeInTheDocument();
+      expect(within(firstCard).queryByRole('button', { name: '削除' })).not.toBeInTheDocument();
+    });
+
+    it('管理エリアのカードには編集・エクスポート・削除のみが表示される', () => {
+      renderHomePage();
+      const managementCards = screen.getAllByTestId('management-pack-card');
+      expect(managementCards).toHaveLength(2);
+
+      const firstCard = managementCards[0];
+      expect(within(firstCard).getByRole('link', { name: '編集' })).toHaveAttribute('href', '/editor/pack-1');
       expect(within(firstCard).getByRole('button', { name: 'エクスポート' })).toBeInTheDocument();
       expect(within(firstCard).getByRole('button', { name: '削除' })).toBeInTheDocument();
+      expect(within(firstCard).queryByRole('link', { name: '開始' })).not.toBeInTheDocument();
+      expect(within(firstCard).queryByRole('link', { name: '履歴' })).not.toBeInTheDocument();
     });
 
     it('開始ボタンは /quiz/:packId へのリンクである', () => {
       renderHomePage();
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('learning-pack-card');
       const startLink = within(packCards[0]).getByRole('link', { name: '開始' });
       expect(startLink).toHaveAttribute('href', '/quiz/pack-1');
     });
 
     it('履歴ボタンは /history/:packId へのリンクである', () => {
       renderHomePage();
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('learning-pack-card');
       const historyLink = within(packCards[0]).getByRole('link', { name: '履歴' });
       expect(historyLink).toHaveAttribute('href', '/history/pack-1');
     });
@@ -202,17 +219,23 @@ describe('HomePage', () => {
       });
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
-      expect(within(packCards[0]).getByTestId('all-correct-badge')).toBeInTheDocument();
-      expect(within(packCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      const learningCards = screen.getAllByTestId('learning-pack-card');
+      const managementCards = screen.getAllByTestId('management-pack-card');
+      expect(within(learningCards[0]).getByTestId('all-correct-badge')).toBeInTheDocument();
+      expect(within(learningCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      expect(within(managementCards[0]).getByTestId('all-correct-badge')).toBeInTheDocument();
+      expect(within(managementCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
     });
 
     it('全問正解していないパックにはバッジを表示しない', () => {
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
-      expect(within(packCards[0]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
-      expect(within(packCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      const learningCards = screen.getAllByTestId('learning-pack-card');
+      const managementCards = screen.getAllByTestId('management-pack-card');
+      expect(within(learningCards[0]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      expect(within(learningCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      expect(within(managementCards[0]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      expect(within(managementCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
     });
   });
 
@@ -269,7 +292,7 @@ describe('HomePage', () => {
       const user = userEvent.setup();
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: '削除' }));
 
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -282,7 +305,7 @@ describe('HomePage', () => {
       const user = userEvent.setup();
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: '削除' }));
       await user.click(screen.getByRole('button', { name: '削除する' }));
 
@@ -293,7 +316,7 @@ describe('HomePage', () => {
       const user = userEvent.setup();
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: '削除' }));
       await user.click(screen.getByRole('button', { name: 'キャンセル' }));
 
@@ -306,7 +329,7 @@ describe('HomePage', () => {
       mockDeletePack.mockResolvedValue('削除に失敗しました');
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: '削除' }));
       await user.click(screen.getByRole('button', { name: '削除する' }));
 
@@ -320,7 +343,7 @@ describe('HomePage', () => {
       mockExportPack.mockResolvedValue(null);
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
 
       expect(mockExportPack).toHaveBeenCalledWith('pack-1', 'JavaScript基礎');
@@ -331,7 +354,7 @@ describe('HomePage', () => {
       mockExportPack.mockResolvedValue(null);
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
 
       expect(screen.getByText('「JavaScript基礎」をエクスポートしました。')).toBeInTheDocument();
@@ -342,7 +365,7 @@ describe('HomePage', () => {
       mockExportPack.mockResolvedValue('エクスポートに失敗しました');
       renderHomePage();
 
-      const packCards = screen.getAllByTestId('pack-card');
+      const packCards = screen.getAllByTestId('management-pack-card');
       await user.click(within(packCards[0]).getByRole('button', { name: 'エクスポート' }));
 
       expect(screen.getByText('エクスポートに失敗しました')).toBeInTheDocument();

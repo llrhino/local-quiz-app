@@ -25,7 +25,10 @@ describe('App', () => {
       screen.getByRole('heading', { name: 'ローカルクイズアプリ' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('heading', { name: 'クイズパック' }),
+      screen.getByRole('heading', { name: '学習パック' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('heading', { name: 'パック管理' }),
     ).toBeInTheDocument();
     expect(
       screen.getByText('オフライン学習'),
@@ -34,8 +37,8 @@ describe('App', () => {
       screen.getByRole('link', { name: '設定' }),
     ).toHaveAttribute('href', '/settings');
     expect(
-      screen.getByRole('button', { name: 'インポート' }),
-    ).toBeInTheDocument();
+      screen.getByRole('link', { name: '新規作成' }),
+    ).toHaveAttribute('href', '/editor');
   });
 
   it('主要ページの見出しを日本語で表示する', () => {
@@ -58,6 +61,16 @@ describe('App', () => {
     );
 
     expect(screen.getByRole('heading', { name: '学習履歴' })).toBeInTheDocument();
+
+    cleanup();
+
+    render(
+      <MemoryRouter initialEntries={['/editor']}>
+        <App />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'クイズパック作成' })).toBeInTheDocument();
 
   });
 });
