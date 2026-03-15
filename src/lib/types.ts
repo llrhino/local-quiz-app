@@ -62,6 +62,8 @@ export type PackStatistics = {
   totalAnswers: number;
   correctAnswers: number;
   accuracyRate: number;
+  /** 弱点判定対象の問題数（回答2回以上の問題数） */
+  weakEligibleCount: number;
 };
 
 export type WeakQuestion = {

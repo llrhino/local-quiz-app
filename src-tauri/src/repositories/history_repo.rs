@@ -61,11 +61,25 @@ pub fn get_pack_statistics(connection: &Connection, pack_id: &str) -> RepoResult
         correct_answers as f64 / total_answers as f64
     };
 
+    // 弱点判定対象の問題数（回答2回以上の問題数）
+    let weak_eligible_count: i64 = connection.query_row(
+        "SELECT COUNT(*) FROM (
+            SELECT question_id
+            FROM learning_history
+            WHERE pack_id = ?1
+            GROUP BY question_id
+            HAVING COUNT(*) >= 2
+         );",
+        [pack_id],
+        |row| row.get(0),
+    )?;
+
     Ok(PackStatistics {
         pack_id: pack_id.to_string(),
         total_answers: total_answers as usize,
         correct_answers: correct_answers as usize,
         accuracy_rate,
+        weak_eligible_count: weak_eligible_count as usize,
     })
 }
 

@@ -99,6 +99,7 @@ mod tests {
         assert_eq!(stats.total_answers, 0);
         assert_eq!(stats.correct_answers, 0);
         assert!((stats.accuracy_rate - 0.0).abs() < f64::EPSILON);
+        assert_eq!(stats.weak_eligible_count, 0);
     }
 
     #[test]
@@ -117,6 +118,8 @@ mod tests {
         assert_eq!(stats.total_answers, 5);
         assert_eq!(stats.correct_answers, 2);
         assert!((stats.accuracy_rate - 0.4).abs() < f64::EPSILON);
+        // sample_history: q1を2回、q2を2回、q3を1回回答 → 2回以上はq1, q2の2問
+        assert_eq!(stats.weak_eligible_count, 2);
     }
 
     // --- get_weak_questions ---

@@ -34,6 +34,7 @@ const sampleStatistics: PackStatistics = {
   totalAnswers: 10,
   correctAnswers: 7,
   accuracyRate: 0.7,
+  weakEligibleCount: 3,
 };
 
 const sampleWeakQuestions: WeakQuestion[] = [
@@ -244,13 +245,38 @@ describe('HistoryPage', () => {
     it('弱点問題がない場合はメッセージを表示する', () => {
       mockUseHistoryData.mockReturnValue({
         sessions: sampleSessions,
-        statistics: sampleStatistics,
+        statistics: { ...sampleStatistics, weakEligibleCount: 0 },
         weakQuestions: [],
         loading: false,
         error: null,
       });
       renderHistoryPage();
       expect(screen.getByText('弱点問題はありません')).toBeInTheDocument();
+    });
+
+    it('弱点ゼロかつ判定対象ありの場合に達成カードを表示する', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: { ...sampleStatistics, weakEligibleCount: 3 },
+        weakQuestions: [],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.getByText('すべての弱点を克服しました')).toBeInTheDocument();
+      expect(screen.queryByText('弱点問題はありません')).not.toBeInTheDocument();
+    });
+
+    it('弱点ゼロでも判定対象がゼロの場合は達成カードを表示しない', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: { ...sampleStatistics, weakEligibleCount: 0 },
+        weakQuestions: [],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.queryByText('すべての弱点を克服しました')).not.toBeInTheDocument();
     });
   });
 
@@ -263,6 +289,7 @@ describe('HistoryPage', () => {
           totalAnswers: 0,
           correctAnswers: 0,
           accuracyRate: 0,
+          weakEligibleCount: 0,
         },
         weakQuestions: [],
         loading: false,

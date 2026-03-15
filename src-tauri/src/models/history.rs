@@ -17,6 +17,8 @@ pub struct PackStatistics {
     pub total_answers: usize,
     pub correct_answers: usize,
     pub accuracy_rate: f64,
+    /// 弱点判定対象の問題数（回答2回以上の問題数）
+    pub weak_eligible_count: usize,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
