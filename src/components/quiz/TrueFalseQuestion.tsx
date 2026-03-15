@@ -1,3 +1,5 @@
+import { useCallback, useEffect } from 'react';
+
 import type { TrueFalseQuestion as TrueFalseQuestionType } from '../../lib/types';
 
 type AnswerResult = {
@@ -36,6 +38,20 @@ export default function TrueFalseQuestion({
   answerResult,
   correctAnswer,
 }: Props) {
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (disabled) return;
+      if (e.key === '1') onAnswer('true');
+      if (e.key === '2') onAnswer('false');
+    },
+    [disabled, onAnswer],
+  );
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   return (
     <div className="space-y-3">
       <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>

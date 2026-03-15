@@ -109,6 +109,44 @@ describe('TrueFalseQuestion', () => {
     });
   });
 
+  it('1キーで○（true）を選択できる', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<TrueFalseQuestion question={question} onAnswer={onAnswer} />);
+
+    await user.keyboard('1');
+    expect(onAnswer).toHaveBeenCalledWith('true');
+  });
+
+  it('2キーで×（false）を選択できる', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<TrueFalseQuestion question={question} onAnswer={onAnswer} />);
+
+    await user.keyboard('2');
+    expect(onAnswer).toHaveBeenCalledWith('false');
+  });
+
+  it('3以上のキーは無視される', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(<TrueFalseQuestion question={question} onAnswer={onAnswer} />);
+
+    await user.keyboard('3');
+    expect(onAnswer).not.toHaveBeenCalled();
+  });
+
+  it('disabled時はキーボード操作も無効', async () => {
+    const onAnswer = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <TrueFalseQuestion question={question} onAnswer={onAnswer} disabled />,
+    );
+
+    await user.keyboard('1');
+    expect(onAnswer).not.toHaveBeenCalled();
+  });
+
   it('disabled時はボタンをクリックしてもonAnswerが呼ばれない', async () => {
     const onAnswer = vi.fn();
     const user = userEvent.setup();
