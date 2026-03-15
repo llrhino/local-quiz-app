@@ -89,6 +89,11 @@ export type WeakQuestion = {
   answerCount: number;
   accuracyRate: number;
   lastUserAnswer: string;
+  questionType: QuestionType;
+  correctAnswer: string;
+  choicesJson: string | null;
+  explanation: string | null;
+  lastIsCorrect: boolean;
 };
 
 export type AppSettings = {

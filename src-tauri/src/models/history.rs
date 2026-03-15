@@ -41,4 +41,9 @@ pub struct WeakQuestion {
     pub answer_count: usize,
     pub accuracy_rate: f64,
     pub last_user_answer: String,
+    pub question_type: String,
+    pub correct_answer: String,
+    pub choices_json: Option<String>,
+    pub explanation: Option<String>,
+    pub last_is_correct: bool,
 }

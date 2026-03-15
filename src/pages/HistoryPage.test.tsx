@@ -45,6 +45,11 @@ const sampleWeakQuestions: WeakQuestion[] = [
     answerCount: 4,
     accuracyRate: 0.25,
     lastUserAnswer: '間違った回答',
+    questionType: 'text_input',
+    correctAnswer: 'SQLを悪用した攻撃手法',
+    choicesJson: null,
+    explanation: 'SQL文を注入する攻撃',
+    lastIsCorrect: false,
   },
   {
     questionId: 'q5',
@@ -52,6 +57,11 @@ const sampleWeakQuestions: WeakQuestion[] = [
     answerCount: 3,
     accuracyRate: 0.333,
     lastUserAnswer: 'クロスサイトスクリプティング',
+    questionType: 'text_input',
+    correctAnswer: 'クロスサイトスクリプティング',
+    choicesJson: null,
+    explanation: null,
+    lastIsCorrect: true,
   },
 ];
 
@@ -177,10 +187,82 @@ describe('HistoryPage', () => {
       expect(screen.getByText('33%')).toBeInTheDocument();
     });
 
-    it('弱点問題の直近回答を表示する', () => {
+    it('弱点問題の直近回答をフォーマット済みで表示する', () => {
       renderHistoryPage();
       expect(screen.getByText('間違った回答')).toBeInTheDocument();
-      expect(screen.getByText('クロスサイトスクリプティング')).toBeInTheDocument();
+      // q5は回答=正解なので複数表示される
+      expect(screen.getAllByText('クロスサイトスクリプティング').length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('弱点問題の正解を表示する', () => {
+      renderHistoryPage();
+      expect(screen.getByText('SQLを悪用した攻撃手法')).toBeInTheDocument();
+    });
+
+    it('不正解の弱点問題に不正解アイコンを表示する', () => {
+      renderHistoryPage();
+      const items = screen.getAllByTestId('weak-question-item');
+      // q3は不正解
+      expect(items[0].querySelector('[data-testid="incorrect-icon"]')).toBeInTheDocument();
+    });
+
+    it('正解の弱点問題に正解アイコンを表示する', () => {
+      renderHistoryPage();
+      const items = screen.getAllByTestId('weak-question-item');
+      // q5は正解
+      expect(items[1].querySelector('[data-testid="correct-icon"]')).toBeInTheDocument();
+    });
+
+    it('選択問題のインデックスを選択肢テキストに変換して表示する', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: sampleStatistics,
+        weakQuestions: [
+          {
+            questionId: 'q1',
+            questionText: '鍵長の問題',
+            answerCount: 3,
+            accuracyRate: 0.33,
+            lastUserAnswer: '0',
+            questionType: 'multiple_choice' as const,
+            correctAnswer: '1',
+            choicesJson: JSON.stringify([{ text: '64ビット' }, { text: '256ビット' }]),
+            explanation: null,
+            lastIsCorrect: false,
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.getByText('64ビット')).toBeInTheDocument();
+      expect(screen.getByText('256ビット')).toBeInTheDocument();
+    });
+
+    it('〇×問題のtrue/falseを日本語に変換して表示する', () => {
+      mockUseHistoryData.mockReturnValue({
+        sessions: sampleSessions,
+        statistics: sampleStatistics,
+        weakQuestions: [
+          {
+            questionId: 'q2',
+            questionText: 'TLSの問題',
+            answerCount: 2,
+            accuracyRate: 0.0,
+            lastUserAnswer: 'false',
+            questionType: 'true_false' as const,
+            correctAnswer: 'true',
+            choicesJson: null,
+            explanation: null,
+            lastIsCorrect: false,
+          },
+        ],
+        loading: false,
+        error: null,
+      });
+      renderHistoryPage();
+      expect(screen.getByText('×')).toBeInTheDocument();
+      expect(screen.getByText('〇')).toBeInTheDocument();
     });
 
     it('回答5回以上かつ正答率60%の弱点問題に「あと少しで克服」ラベルを表示する', () => {
@@ -194,6 +276,11 @@ describe('HistoryPage', () => {
             answerCount: 5,
             accuracyRate: 0.6,
             lastUserAnswer: '回答A',
+            questionType: 'text_input' as const,
+            correctAnswer: '正解A',
+            choicesJson: null,
+            explanation: null,
+            lastIsCorrect: false,
           },
         ],
         loading: false,
@@ -214,6 +301,11 @@ describe('HistoryPage', () => {
             answerCount: 4,
             accuracyRate: 0.75,
             lastUserAnswer: '回答A',
+            questionType: 'text_input' as const,
+            correctAnswer: '正解A',
+            choicesJson: null,
+            explanation: null,
+            lastIsCorrect: false,
           },
         ],
         loading: false,
@@ -234,6 +326,11 @@ describe('HistoryPage', () => {
             answerCount: 5,
             accuracyRate: 0.4,
             lastUserAnswer: '回答A',
+            questionType: 'text_input' as const,
+            correctAnswer: '正解A',
+            choicesJson: null,
+            explanation: null,
+            lastIsCorrect: false,
           },
         ],
         loading: false,

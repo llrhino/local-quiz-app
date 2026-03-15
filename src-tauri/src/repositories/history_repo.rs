@@ -165,7 +165,19 @@ pub fn get_weak_questions(connection: &Connection, pack_id: &str) -> RepoResult<
                   AND lh2.question_id = tc.question_id
                 ORDER BY lh2.answered_at DESC, lh2.id DESC
                 LIMIT 1
-            ) AS last_user_answer
+            ) AS last_user_answer,
+            q.question_type,
+            q.correct_answer,
+            q.choices_json,
+            q.explanation,
+            (
+                SELECT lh3.is_correct
+                FROM learning_history lh3
+                WHERE lh3.pack_id = ?1
+                  AND lh3.question_id = tc.question_id
+                ORDER BY lh3.answered_at DESC, lh3.id DESC
+                LIMIT 1
+            ) AS last_is_correct
          FROM total_counts tc
          JOIN recent_stats rs ON rs.question_id = tc.question_id
          JOIN questions q ON q.pack_id = ?1 AND q.question_id = tc.question_id
@@ -180,6 +192,11 @@ pub fn get_weak_questions(connection: &Connection, pack_id: &str) -> RepoResult<
             answer_count: row.get::<_, i64>(2)? as usize,
             accuracy_rate: row.get(3)?,
             last_user_answer: row.get(4)?,
+            question_type: row.get(5)?,
+            correct_answer: row.get(6)?,
+            choices_json: row.get(7)?,
+            explanation: row.get(8)?,
+            last_is_correct: row.get::<_, i64>(9)? != 0,
         })
     })?;
 
@@ -251,8 +268,21 @@ mod tests {
         assert_eq!(weak_questions[0].answer_count, 2);
         assert!((weak_questions[0].accuracy_rate - 0.0).abs() < f64::EPSILON);
         assert_eq!(weak_questions[0].last_user_answer, "false");
+        assert_eq!(weak_questions[0].question_type, "true_false");
+        assert_eq!(weak_questions[0].correct_answer, "true");
+        assert!(weak_questions[0].choices_json.is_none());
+        assert_eq!(
+            weak_questions[0].explanation.as_deref(),
+            Some("Web 通信保護に使われる")
+        );
+        assert!(!weak_questions[0].last_is_correct);
+
         assert_eq!(weak_questions[1].question_id, "q1");
         assert!((weak_questions[1].accuracy_rate - 0.5).abs() < f64::EPSILON);
+        assert_eq!(weak_questions[1].question_type, "multiple_choice");
+        assert_eq!(weak_questions[1].correct_answer, "1");
+        assert!(weak_questions[1].choices_json.is_some());
+        assert!(weak_questions[1].last_is_correct);
     }
 
     #[test]

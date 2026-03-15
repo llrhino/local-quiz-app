@@ -2,6 +2,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import Card from '../components/common/Card';
 import { useHistoryData } from '../hooks/useHistoryData';
+import { formatWeakQuestionAnswer } from '../lib/formatAnswer';
 
 function formatDate(isoString: string): string {
   const date = new Date(isoString);
@@ -155,7 +156,24 @@ export default function HistoryPage() {
                     <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400">
                       <span>{wq.answerCount}回回答</span>
                       <span>正答率: <span className="text-slate-700 dark:text-slate-300">{formatPercent(wq.accuracyRate)}</span></span>
-                      <span>直近の回答: <span className="text-slate-700 dark:text-slate-300">{wq.lastUserAnswer}</span></span>
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm">
+                      <div className="flex items-start gap-2">
+                        {wq.lastIsCorrect ? (
+                          <span data-testid="correct-icon" className="shrink-0 font-bold text-emerald-600 dark:text-emerald-400">✓</span>
+                        ) : (
+                          <span data-testid="incorrect-icon" className="shrink-0 font-bold text-red-600 dark:text-red-400">✗</span>
+                        )}
+                        <span className="text-slate-500 dark:text-slate-400">
+                          あなたの回答: <span className="text-slate-700 dark:text-slate-300 line-clamp-2">{formatWeakQuestionAnswer(wq.questionType, wq.choicesJson, wq.lastUserAnswer)}</span>
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="shrink-0 font-bold text-emerald-600 dark:text-emerald-400">✓</span>
+                        <span className="text-slate-500 dark:text-slate-400">
+                          正解: <span className="text-slate-700 dark:text-slate-300 line-clamp-2">{formatWeakQuestionAnswer(wq.questionType, wq.choicesJson, wq.correctAnswer)}</span>
+                        </span>
+                      </div>
                     </div>
                   </div>
                 ))}

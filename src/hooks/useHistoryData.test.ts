@@ -44,6 +44,11 @@ const sampleWeakQuestions: WeakQuestion[] = [
     answerCount: 5,
     accuracyRate: 0.2,
     lastUserAnswer: 'B',
+    questionType: 'text_input',
+    correctAnswer: '正解B',
+    choicesJson: null,
+    explanation: null,
+    lastIsCorrect: false,
   },
 ];
 

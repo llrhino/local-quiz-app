@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 
 import type { MultipleChoiceQuestion, TrueFalseQuestion, TextInputQuestion, MultiSelectQuestion } from './types';
-import { formatDisplayAnswer } from './formatAnswer';
+import { formatDisplayAnswer, formatWeakQuestionAnswer } from './formatAnswer';
 
 describe('formatDisplayAnswer', () => {
   describe('〇×問題', () => {
@@ -85,5 +85,38 @@ describe('formatDisplayAnswer', () => {
     it('範囲外のインデックスが含まれる場合はそのまま返す', () => {
       expect(formatDisplayAnswer(question, '0,99')).toBe('TLS, 99');
     });
+  });
+});
+
+describe('formatWeakQuestionAnswer', () => {
+  it('〇×問題で "true" を "〇" に変換する', () => {
+    expect(formatWeakQuestionAnswer('true_false', null, 'true')).toBe('〇');
+  });
+
+  it('〇×問題で "false" を "×" に変換する', () => {
+    expect(formatWeakQuestionAnswer('true_false', null, 'false')).toBe('×');
+  });
+
+  it('選択問題でインデックスを選択肢テキストに変換する', () => {
+    const choicesJson = JSON.stringify([{ text: 'A' }, { text: 'B' }, { text: 'C' }]);
+    expect(formatWeakQuestionAnswer('multiple_choice', choicesJson, '1')).toBe('B');
+  });
+
+  it('選択問題でchoicesJsonがnullの場合はインデックスをそのまま返す', () => {
+    expect(formatWeakQuestionAnswer('multiple_choice', null, '1')).toBe('1');
+  });
+
+  it('テキスト入力問題でそのまま返す', () => {
+    expect(formatWeakQuestionAnswer('text_input', null, '東京')).toBe('東京');
+  });
+
+  it('複数選択問題で複数インデックスを選択肢テキストに変換する', () => {
+    const choicesJson = JSON.stringify([{ text: 'X' }, { text: 'Y' }, { text: 'Z' }]);
+    expect(formatWeakQuestionAnswer('multi_select', choicesJson, '0,2')).toBe('X, Z');
+  });
+
+  it('複数選択問題で範囲外インデックスはそのまま返す', () => {
+    const choicesJson = JSON.stringify([{ text: 'X' }, { text: 'Y' }]);
+    expect(formatWeakQuestionAnswer('multi_select', choicesJson, '0,99')).toBe('X, 99');
   });
 });
