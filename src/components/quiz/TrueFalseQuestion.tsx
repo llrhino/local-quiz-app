@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { TrueFalseQuestion as TrueFalseQuestionType } from '../../lib/types';
+import LinkText from '../common/LinkText';
 
 type AnswerResult = {
   userAnswer: string;
@@ -75,7 +76,7 @@ export default function TrueFalseQuestion({
 
   return (
     <div className="space-y-3">
-      <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>
+      <p className="text-lg font-medium text-slate-900 dark:text-slate-100"><LinkText text={question.question} /></p>
       <div className="flex gap-3">
         <button
           className={getButtonClassName('true', selectedIndex, answerResult, correctAnswer)}

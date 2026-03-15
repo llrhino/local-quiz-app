@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import type { TextInputQuestion as TextInputQuestionType } from '../../lib/types';
+import LinkText from '../common/LinkText';
 
 type Props = {
   question: TextInputQuestionType;
@@ -29,7 +30,7 @@ export default function TextInputQuestion({
 
   return (
     <div className="space-y-3">
-      <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>
+      <p className="text-lg font-medium text-slate-900 dark:text-slate-100"><LinkText text={question.question} /></p>
       <form
         onSubmit={(e) => {
           e.preventDefault();

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { MultipleChoiceQuestion as MultipleChoiceQuestionType } from '../../lib/types';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
+import LinkText from '../common/LinkText';
 
 type AnswerResult = {
   userAnswer: string;
@@ -99,7 +100,7 @@ export default function MultipleChoiceQuestion({
 
   return (
     <div className="space-y-3">
-      <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>
+      <p className="text-lg font-medium text-slate-900 dark:text-slate-100"><LinkText text={question.question} /></p>
       <div className="grid gap-3">
         {displayChoices.map((choice, index) => (
           <button
@@ -112,7 +113,7 @@ export default function MultipleChoiceQuestion({
             <span className="mr-2 font-mono text-sm text-slate-400">
               {index + 1}.
             </span>
-            {choice.text}
+            <LinkText text={choice.text} />
           </button>
         ))}
       </div>
