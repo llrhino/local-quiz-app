@@ -53,6 +53,38 @@ describe('LinkText', () => {
     expect(screen.getByText('解説はありません')).toBeInTheDocument();
   });
 
+  it('URL前後のテキストはリンクにならない', () => {
+    const { container } = render(<LinkText text="詳細は https://example.com を参照してください" />);
+    const buttons = container.querySelectorAll('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].textContent).toBe('https://example.com');
+  });
+
+  it('複数のURLが含まれる場合でもURL以外はリンクにならない', () => {
+    const { container } = render(<LinkText text="http://foo.com と https://bar.com の2つ" />);
+    const buttons = container.querySelectorAll('button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0].textContent).toBe('http://foo.com');
+    expect(buttons[1].textContent).toBe('https://bar.com');
+  });
+
+  it('URL直後に日本語が続いてもURLだけがリンクになる', () => {
+    const { container } = render(
+      <LinkText text="詳細は（https://example.com/path）を参照" />,
+    );
+    const buttons = container.querySelectorAll('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].textContent).toBe('https://example.com/path');
+  });
+
+  it('全角括弧で囲まれたURLが正しくリンク化される', () => {
+    const { container } = render(<LinkText text="OWASP Top 10（https://owasp.org/top-ten/）において" />);
+    const buttons = container.querySelectorAll('button');
+    expect(buttons).toHaveLength(1);
+    expect(buttons[0].textContent).toBe('https://owasp.org/top-ten/');
+    expect(screen.getByText('）において')).toBeInTheDocument();
+  });
+
   it('リンクにはアンダーラインのスタイルが適用される', () => {
     render(<LinkText text="https://example.com" />);
     const link = screen.getByRole('button', { name: 'https://example.com' });

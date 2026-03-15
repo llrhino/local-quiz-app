@@ -111,6 +111,46 @@
       ],
       "answer": [0, 2],
       "explanation": "AESとDESは共通鍵暗号方式です。RSAとElGamalは公開鍵暗号方式です。"
+    },
+    {
+      "id": "q-012",
+      "type": "multiple_choice",
+      "question": "OWASP Top 10（https://owasp.org/www-project-top-ten/）において、2021年版で1位にランクされた脆弱性カテゴリはどれか？",
+      "choices": [
+        { "text": "インジェクション" },
+        { "text": "アクセス制御の不備" },
+        { "text": "クロスサイトスクリプティング" },
+        { "text": "安全でないデシリアライゼーション" }
+      ],
+      "answer": 1,
+      "explanation": "OWASP Top 10 2021では「アクセス制御の不備（Broken Access Control）」が1位です。詳細は https://owasp.org/Top10/A01_2021-Broken_Access_Control/ を参照してください。"
+    },
+    {
+      "id": "q-013",
+      "type": "true_false",
+      "question": "CVE（https://cve.mitre.org/）は、既知の脆弱性に一意の識別番号を付与するシステムである。",
+      "answer": true,
+      "explanation": "CVE（Common Vulnerabilities and Exposures）は脆弱性に一意のIDを付与する国際的な仕組みです。詳細は https://www.cve.org/About/Overview を参照してください。"
+    },
+    {
+      "id": "q-014",
+      "type": "text_input",
+      "question": "NISTが策定したサイバーセキュリティフレームワーク（https://www.nist.gov/cyberframework）の5つの機能のうち、最初に行うべき機能は何か？（カタカナ3文字）",
+      "answer": "識別",
+      "explanation": "NISTサイバーセキュリティフレームワークの5つの機能は「識別（Identify）」「防御（Protect）」「検知（Detect）」「対応（Respond）」「復旧（Recover）」です。フレームワークの詳細は https://www.nist.gov/cyberframework を参照してください。"
+    },
+    {
+      "id": "q-015",
+      "type": "multi_select",
+      "question": "OWASP Top 10 2021（https://owasp.org/www-project-top-ten/）でトップ3に入る脆弱性カテゴリをすべて選びなさい。",
+      "choices": [
+        { "text": "アクセス制御の不備" },
+        { "text": "暗号化の失敗" },
+        { "text": "インジェクション" },
+        { "text": "クロスサイトスクリプティング" }
+      ],
+      "answer": [0, 1, 2],
+      "explanation": "OWASP Top 10 2021のトップ3は、1位「アクセス制御の不備」、2位「暗号化の失敗」、3位「インジェクション」です。詳細は https://owasp.org/www-project-top-ten/ を参照してください。"
     }
   ]
 }

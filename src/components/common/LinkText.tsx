@@ -5,7 +5,8 @@ type Props = {
   fallback?: string;
 };
 
-const URL_REGEX = /(https?:\/\/[^\s]+)/g;
+// URLに有効な文字のみマッチ（日本語や全角記号はURLの一部として扱わない）
+const URL_REGEX = /(https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=%]+)/g;
 
 export default function LinkText({ text, fallback }: Props) {
   if (text === undefined) {
@@ -21,7 +22,7 @@ export default function LinkText({ text, fallback }: Props) {
   return (
     <>
       {parts.map((part, index) =>
-        URL_REGEX.test(part) ? (
+        index % 2 === 1 ? (
           <button
             key={index}
             className="underline text-sky-600 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300"
