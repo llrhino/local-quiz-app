@@ -91,6 +91,7 @@ pub fn get_weak_questions(connection: &Connection, pack_id: &str) -> RepoResult<
          WHERE lh.pack_id = ?1
          GROUP BY lh.question_id, q.question_text
          HAVING COUNT(*) >= 2
+            AND CAST(COALESCE(SUM(lh.is_correct), 0) AS REAL) / COUNT(*) < 1.0
          ORDER BY accuracy_rate ASC, answer_count DESC, lh.question_id ASC;",
     )?;
 
@@ -173,5 +174,51 @@ mod tests {
         assert_eq!(weak_questions[0].last_user_answer, "false");
         assert_eq!(weak_questions[1].question_id, "q1");
         assert!((weak_questions[1].accuracy_rate - 0.5).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn excludes_questions_with_perfect_accuracy_from_weak_questions() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // q1: 2回正解（正答率100%）→ 弱点に含めない
+        for _ in 0..2 {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: "q1".to_string(),
+                    is_correct: true,
+                    user_answer: "1".to_string(),
+                    answered_at: "2026-03-10T10:00:00Z".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        // q2: 2回不正解（正答率0%）→ 弱点に含める
+        for _ in 0..2 {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: "q2".to_string(),
+                    is_correct: false,
+                    user_answer: "false".to_string(),
+                    answered_at: "2026-03-10T10:05:00Z".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        let weak = get_weak_questions(&connection, &pack.id)
+            .expect("weak questions should be returned");
+
+        assert_eq!(weak.len(), 1, "正答率100%のq1は弱点に含まれないこと");
+        assert_eq!(weak[0].question_id, "q2");
     }
 }
