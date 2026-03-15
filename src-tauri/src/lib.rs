@@ -26,6 +26,7 @@ pub fn build_app() -> tauri::Builder<tauri::Wry> {
             commands::quiz_pack::delete_quiz_pack,
             commands::quiz_pack::seed_sample_pack,
             commands::quiz_pack::get_questions_by_pack,
+            commands::quiz_pack::save_quiz_pack,
             commands::history::save_answer_record,
             commands::history::get_learning_history,
             commands::history::get_pack_statistics,

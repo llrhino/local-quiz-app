@@ -12,6 +12,7 @@ import {
   getQuizPack,
   deleteQuizPack,
   getQuestionsByPack,
+  saveQuizPack,
   saveAnswerRecord,
   getLearningHistory,
   getPackStatistics,
@@ -22,7 +23,7 @@ import {
   openSaveFileDialog,
   exportQuizPack,
 } from './commands';
-import type { AnswerRecord } from './types';
+import type { AnswerRecord, SaveQuizPackInput } from './types';
 
 const mockInvoke = vi.mocked(invoke);
 
@@ -59,6 +60,30 @@ describe('commands.ts Tauriコマンドラッパー', () => {
       await deleteQuizPack('pack-1');
       expect(mockInvoke).toHaveBeenCalledWith('delete_quiz_pack', {
         packId: 'pack-1',
+      });
+    });
+
+    it('saveQuizPack は save_quiz_pack を入力引数で呼ぶ', async () => {
+      const input: SaveQuizPackInput = {
+        name: '新規パック',
+        description: '説明',
+        questions: [
+          {
+            id: 'q1',
+            type: 'true_false',
+            question: 'Rust は静的型付け言語である',
+            answer: true,
+          },
+        ],
+      };
+
+      mockInvoke.mockResolvedValue({ id: 'pack-1', name: '新規パック' });
+      await saveQuizPack(input);
+      expect(mockInvoke).toHaveBeenCalledWith('save_quiz_pack', {
+        packId: undefined,
+        name: '新規パック',
+        description: '説明',
+        questions: input.questions,
       });
     });
   });

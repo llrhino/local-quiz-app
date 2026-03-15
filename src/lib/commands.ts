@@ -7,6 +7,7 @@ import type {
   Question,
   QuizPack,
   QuizPackSummary,
+  SaveQuizPackInput,
   Session,
   WeakQuestion,
 } from './types';
@@ -21,6 +22,9 @@ export const getQuizPack = (packId: string) =>
 
 export const deleteQuizPack = (packId: string) =>
   invoke<void>('delete_quiz_pack', { packId });
+
+export const saveQuizPack = ({ packId, name, description, questions }: SaveQuizPackInput) =>
+  invoke<QuizPack>('save_quiz_pack', { packId, name, description, questions });
 
 export const getQuestionsByPack = (packId: string) =>
   invoke<Question[]>('get_questions_by_pack', { packId });

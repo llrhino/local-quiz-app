@@ -38,11 +38,20 @@ export type Question =
   | TextInputQuestion
   | MultiSelectQuestion;
 
+export type SaveQuizPackInput = {
+  packId?: string;
+  name: string;
+  description?: string;
+  questions: Question[];
+};
+
 export type QuizPack = {
   id: string;
   name: string;
   description?: string;
+  source: string;
   importedAt: string;
+  updatedAt?: string | null;
   questions: Question[];
 };
 
@@ -50,8 +59,10 @@ export type QuizPackSummary = {
   id: string;
   name: string;
   description?: string;
+  source: string;
   questionCount: number;
   importedAt: string;
+  updatedAt?: string | null;
   lastStudiedAt?: string | null;
   allCorrect: boolean;
 };
