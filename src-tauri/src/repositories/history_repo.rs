@@ -69,6 +69,9 @@ pub fn get_pack_statistics(connection: &Connection, pack_id: &str) -> RepoResult
     })
 }
 
+/// 弱点問題を抽出する。
+/// 抽出条件: 回答回数が2回以上 かつ 正答率が100%未満の問題。
+/// 正答率の低い順に返す。
 pub fn get_weak_questions(connection: &Connection, pack_id: &str) -> RepoResult<Vec<WeakQuestion>> {
     let mut statement = connection.prepare(
         "SELECT
