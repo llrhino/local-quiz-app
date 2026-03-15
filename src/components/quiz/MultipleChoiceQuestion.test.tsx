@@ -235,4 +235,122 @@ describe('MultipleChoiceQuestion', () => {
       expect(onAnswer).toHaveBeenCalledWith(String(originalIndex));
     });
   });
+
+  describe('矢印キーナビゲーション', () => {
+    it('初期状態で最初の選択肢が選択状態になっている', () => {
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0].className).toContain('ring-sky-500 ring-offset-2');
+      expect(buttons[1].className).not.toContain('bg-sky-50');
+    });
+
+    it('下矢印キーで次の選択肢に移動できる', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowDown}');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[1].className).toContain('ring-sky-500 ring-offset-2');
+      expect(buttons[0].className).not.toContain('bg-sky-50');
+    });
+
+    it('上矢印キーで前の選択肢に移動できる', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{ArrowUp}');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0].className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('右矢印キーで次の選択肢に移動できる', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowRight}');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[1].className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('左矢印キーで前の選択肢に移動できる', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowRight}');
+      await user.keyboard('{ArrowLeft}');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0].className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('最初の選択肢で上矢印を押しても最初のまま', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowUp}');
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0].className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('最後の選択肢で下矢印を押しても最後のまま', async () => {
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{ArrowDown}'); // 5回目、すでに最後
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[3].className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('Enterキーで選択中の回答を確定できる', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
+
+      await user.keyboard('{Enter}');
+      expect(onAnswer).toHaveBeenCalledWith('0');
+    });
+
+    it('下矢印2回→Enterで3番目の選択肢を確定できる', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
+
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{Enter}');
+      expect(onAnswer).toHaveBeenCalledWith('2');
+    });
+
+    it('disabled時は矢印キーもEnterも無効', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <MultipleChoiceQuestion question={question} onAnswer={onAnswer} disabled />,
+      );
+
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{Enter}');
+      expect(onAnswer).not.toHaveBeenCalled();
+    });
+
+    it('shuffleChoicesがtrueの場合、矢印+Enterでシャッフル後の位置の元インデックスが返される', async () => {
+      useAppSettingsStore.setState({ shuffleChoices: true });
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(<MultipleChoiceQuestion question={question} onAnswer={onAnswer} />);
+
+      // 下矢印で2番目の選択肢に移動してEnter
+      await user.keyboard('{ArrowDown}');
+      await user.keyboard('{Enter}');
+      expect(onAnswer).toHaveBeenCalledTimes(1);
+      // 表示2番目の選択肢の元インデックスが返される
+      const buttons = screen.getAllByRole('button');
+      const secondButtonText = buttons[1].textContent?.replace(/^\d+\.\s*/, '');
+      const originalIndex = question.choices.findIndex((c) => c.text === secondButtonText);
+      expect(onAnswer).toHaveBeenCalledWith(String(originalIndex));
+    });
+  });
 });

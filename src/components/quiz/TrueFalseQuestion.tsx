@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import type { TrueFalseQuestion as TrueFalseQuestionType } from '../../lib/types';
 
@@ -15,7 +15,9 @@ type Props = {
   correctAnswer?: string;
 };
 
-function getButtonClassName(value: string, answerResult?: AnswerResult, correctAnswer?: string): string {
+const VALUES = ['true', 'false'] as const;
+
+function getButtonClassName(value: string, selectedIndex: number, answerResult?: AnswerResult, correctAnswer?: string): string {
   const base = 'flex-1 rounded-2xl border px-4 py-3 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2';
   const darkBase = 'dark:text-slate-200';
 
@@ -28,7 +30,10 @@ function getButtonClassName(value: string, answerResult?: AnswerResult, correctA
     }
   }
 
-  return `${base} border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${darkBase}`;
+  const isSelected = VALUES[selectedIndex] === value;
+  const selectedClass = isSelected ? 'ring-2 ring-sky-500 ring-offset-2 border-sky-300 bg-sky-50 dark:border-sky-600 dark:bg-sky-900/30' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700';
+
+  return `${base} ${selectedClass} ${darkBase}`;
 }
 
 export default function TrueFalseQuestion({
@@ -38,13 +43,29 @@ export default function TrueFalseQuestion({
   answerResult,
   correctAnswer,
 }: Props) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [question.id]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (disabled) return;
       if (e.key === '1') onAnswer('true');
       if (e.key === '2') onAnswer('false');
+      if (e.key === 'ArrowLeft') {
+        setSelectedIndex((prev) => Math.max(0, prev - 1));
+      }
+      if (e.key === 'ArrowRight') {
+        setSelectedIndex((prev) => Math.min(1, prev + 1));
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        onAnswer(VALUES[selectedIndex]);
+      }
     },
-    [disabled, onAnswer],
+    [disabled, onAnswer, selectedIndex],
   );
 
   useEffect(() => {
@@ -57,7 +78,7 @@ export default function TrueFalseQuestion({
       <p className="text-lg font-medium text-slate-900 dark:text-slate-100">{question.question}</p>
       <div className="flex gap-3">
         <button
-          className={getButtonClassName('true', answerResult, correctAnswer)}
+          className={getButtonClassName('true', selectedIndex, answerResult, correctAnswer)}
           disabled={disabled}
           onClick={() => onAnswer('true')}
           type="button"
@@ -65,7 +86,7 @@ export default function TrueFalseQuestion({
           ○
         </button>
         <button
-          className={getButtonClassName('false', answerResult, correctAnswer)}
+          className={getButtonClassName('false', selectedIndex, answerResult, correctAnswer)}
           disabled={disabled}
           onClick={() => onAnswer('false')}
           type="button"

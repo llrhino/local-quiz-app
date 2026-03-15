@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import type { MultipleChoiceQuestion as MultipleChoiceQuestionType } from '../../lib/types';
 import { useAppSettingsStore } from '../../stores/appSettingsStore';
@@ -30,7 +30,7 @@ function shuffleArray<T>(array: T[]): T[] {
   return shuffled;
 }
 
-function getChoiceClassName(choiceIndex: string, answerResult?: AnswerResult, correctAnswer?: string): string {
+function getChoiceClassName(choiceIndex: string, isSelected: boolean, answerResult?: AnswerResult, correctAnswer?: string): string {
   const base = 'rounded-2xl border px-4 py-3 text-left text-slate-800 transition-transform active:scale-[0.97] disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2';
   const darkBase = 'dark:text-slate-200';
 
@@ -43,7 +43,9 @@ function getChoiceClassName(choiceIndex: string, answerResult?: AnswerResult, co
     }
   }
 
-  return `${base} border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700 ${darkBase}`;
+  const selectedClass = isSelected ? 'ring-2 ring-sky-500 ring-offset-2 border-sky-300 bg-sky-50 dark:border-sky-600 dark:bg-sky-900/30' : 'border-slate-200 hover:bg-slate-50 dark:border-slate-600 dark:hover:bg-slate-700';
+
+  return `${base} ${selectedClass} ${darkBase}`;
 }
 
 export default function MultipleChoiceQuestion({
@@ -63,6 +65,12 @@ export default function MultipleChoiceQuestion({
     [question.id, shuffleChoices],
   );
 
+  const [selectedIndex, setSelectedIndex] = useState(0);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [question.id]);
+
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (disabled) return;
@@ -70,8 +78,18 @@ export default function MultipleChoiceQuestion({
       if (num >= 1 && num <= displayChoices.length) {
         onAnswer(String(displayChoices[num - 1].originalIndex));
       }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        setSelectedIndex((prev) => Math.min(displayChoices.length - 1, prev + 1));
+      }
+      if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        setSelectedIndex((prev) => Math.max(0, prev - 1));
+      }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        onAnswer(String(displayChoices[selectedIndex].originalIndex));
+      }
     },
-    [disabled, onAnswer, displayChoices],
+    [disabled, onAnswer, displayChoices, selectedIndex],
   );
 
   useEffect(() => {
@@ -85,7 +103,7 @@ export default function MultipleChoiceQuestion({
       <div className="grid gap-3">
         {displayChoices.map((choice, index) => (
           <button
-            className={getChoiceClassName(String(choice.originalIndex), answerResult, correctAnswer)}
+            className={getChoiceClassName(String(choice.originalIndex), index === selectedIndex, answerResult, correctAnswer)}
             disabled={disabled}
             key={choice.originalIndex}
             onClick={() => onAnswer(String(choice.originalIndex))}

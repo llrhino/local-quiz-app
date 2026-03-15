@@ -157,4 +157,83 @@ describe('TrueFalseQuestion', () => {
     await user.click(screen.getByRole('button', { name: '○' }));
     expect(onAnswer).not.toHaveBeenCalled();
   });
+
+  describe('矢印キーナビゲーション', () => {
+    it('初期状態で○（最初の選択肢）が選択状態になっている', () => {
+      render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('右矢印キーで×に移動できる', async () => {
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowRight}');
+      const falseButton = screen.getByRole('button', { name: '×' });
+      expect(falseButton.className).toContain('ring-sky-500 ring-offset-2');
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).not.toContain('bg-sky-50');
+    });
+
+    it('左矢印キーで○に戻れる', async () => {
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowRight}');
+      await user.keyboard('{ArrowLeft}');
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('○の状態で左矢印キーを押しても○のまま', async () => {
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowLeft}');
+      const trueButton = screen.getByRole('button', { name: '○' });
+      expect(trueButton.className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('×の状態で右矢印キーを押しても×のまま', async () => {
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={vi.fn()} />);
+
+      await user.keyboard('{ArrowRight}');
+      await user.keyboard('{ArrowRight}');
+      const falseButton = screen.getByRole('button', { name: '×' });
+      expect(falseButton.className).toContain('ring-sky-500 ring-offset-2');
+    });
+
+    it('Enterキーで選択中の回答を確定できる', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={onAnswer} />);
+
+      await user.keyboard('{Enter}');
+      expect(onAnswer).toHaveBeenCalledWith('true');
+    });
+
+    it('右矢印→Enterで×を確定できる', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(<TrueFalseQuestion question={question} onAnswer={onAnswer} />);
+
+      await user.keyboard('{ArrowRight}');
+      await user.keyboard('{Enter}');
+      expect(onAnswer).toHaveBeenCalledWith('false');
+    });
+
+    it('disabled時は矢印キーもEnterも無効', async () => {
+      const onAnswer = vi.fn();
+      const user = userEvent.setup();
+      render(
+        <TrueFalseQuestion question={question} onAnswer={onAnswer} disabled />,
+      );
+
+      await user.keyboard('{ArrowRight}');
+      await user.keyboard('{Enter}');
+      expect(onAnswer).not.toHaveBeenCalled();
+    });
+  });
 });
