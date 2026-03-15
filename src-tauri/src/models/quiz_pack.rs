@@ -21,4 +21,5 @@ pub struct QuizPackSummary {
     pub question_count: usize,
     pub imported_at: String,
     pub last_studied_at: Option<String>,
+    pub all_correct: bool,
 }

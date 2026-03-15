@@ -32,7 +32,15 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             qp.description,
             qp.question_count,
             qp.imported_at,
-            MAX(lh.answered_at) AS last_studied_at
+            MAX(lh.answered_at) AS last_studied_at,
+            CASE
+                WHEN qp.question_count > 0
+                    AND (SELECT COUNT(DISTINCT lh2.question_id)
+                         FROM learning_history lh2
+                         WHERE lh2.pack_id = qp.id AND lh2.is_correct = 1
+                        ) = qp.question_count
+                THEN 1 ELSE 0
+            END AS all_correct
          FROM quiz_packs qp
          LEFT JOIN learning_history lh ON lh.pack_id = qp.id
          GROUP BY qp.id, qp.name, qp.description, qp.question_count, qp.imported_at
@@ -52,6 +60,7 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             question_count: row.get::<_, i64>(3)? as usize,
             imported_at: row.get(4)?,
             last_studied_at: row.get(5)?,
+            all_correct: row.get::<_, i64>(6)? != 0,
         })
     })?;
 
@@ -117,6 +126,7 @@ mod tests {
         assert_eq!(summaries[0].id, pack.id);
         assert_eq!(summaries[0].question_count, 3);
         assert_eq!(summaries[0].last_studied_at, None);
+        assert!(!summaries[0].all_correct, "学習履歴がないパックはall_correctがfalse");
 
         let stored = get_quiz_pack(&connection, "security-pack")
             .expect("quiz pack lookup should succeed")
@@ -124,6 +134,77 @@ mod tests {
         assert_eq!(stored.name, pack.name);
         assert_eq!(stored.description, pack.description);
         assert_eq!(stored.questions, pack.questions);
+    }
+
+    #[test]
+    fn all_correct_is_true_when_every_question_answered_correctly() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        let pack = sample_pack();
+
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        question_repo::insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // q1, q2, q3 すべてに正解の履歴を追加
+        for (qid, answer) in [("q1", "1"), ("q2", "true"), ("q3", "RSA")] {
+            history_repo::insert_answer_record(
+                &connection,
+                &AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: qid.to_string(),
+                    is_correct: true,
+                    user_answer: answer.to_string(),
+                    answered_at: "2026-03-10T10:00:00Z".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
+        assert!(summaries[0].all_correct, "全問に正解履歴があればall_correctがtrue");
+    }
+
+    #[test]
+    fn all_correct_is_false_when_some_questions_not_answered_correctly() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        let pack = sample_pack();
+
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        question_repo::insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // q1 のみ正解、q2 は不正解、q3 は未回答
+        history_repo::insert_answer_record(
+            &connection,
+            &AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+            },
+        )
+        .expect("history should be inserted");
+        history_repo::insert_answer_record(
+            &connection,
+            &AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q2".to_string(),
+                is_correct: false,
+                user_answer: "false".to_string(),
+                answered_at: "2026-03-10T10:05:00Z".to_string(),
+            },
+        )
+        .expect("history should be inserted");
+
+        let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
+        assert!(!summaries[0].all_correct, "全問に正解していなければall_correctがfalse");
     }
 
     #[test]

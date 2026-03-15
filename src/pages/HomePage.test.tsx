@@ -27,6 +27,7 @@ const pack1: QuizPackSummary = {
   questionCount: 10,
   importedAt: '2026-03-10T09:00:00Z',
   lastStudiedAt: '2026-03-11T14:30:00Z',
+  allCorrect: false,
 };
 
 const pack2: QuizPackSummary = {
@@ -35,6 +36,7 @@ const pack2: QuizPackSummary = {
   questionCount: 5,
   importedAt: '2026-03-12T10:00:00Z',
   lastStudiedAt: null,
+  allCorrect: false,
 };
 
 function renderHomePage() {
@@ -172,6 +174,39 @@ describe('HomePage', () => {
       const packCards = screen.getAllByTestId('pack-card');
       const historyLink = within(packCards[0]).getByRole('link', { name: '履歴' });
       expect(historyLink).toHaveAttribute('href', '/history/pack-1');
+    });
+  });
+
+  describe('全問正解バッジ', () => {
+    it('全問正解したパックにバッジを表示する', () => {
+      const allCorrectPack: QuizPackSummary = {
+        ...pack1,
+        allCorrect: true,
+      };
+      mockUseQuizPacks.mockReturnValue({
+        packs: [allCorrectPack, pack2],
+        loading: false,
+        error: null,
+        importing: false,
+        refresh: mockRefresh,
+        importPack: mockImportPack,
+        seedSample: mockSeedSample,
+        deletePack: mockDeletePack,
+        exportPack: vi.fn(),
+      });
+      renderHomePage();
+
+      const packCards = screen.getAllByTestId('pack-card');
+      expect(within(packCards[0]).getByTestId('all-correct-badge')).toBeInTheDocument();
+      expect(within(packCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+    });
+
+    it('全問正解していないパックにはバッジを表示しない', () => {
+      renderHomePage();
+
+      const packCards = screen.getAllByTestId('pack-card');
+      expect(within(packCards[0]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
+      expect(within(packCards[1]).queryByTestId('all-correct-badge')).not.toBeInTheDocument();
     });
   });
 

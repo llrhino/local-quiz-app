@@ -46,6 +46,7 @@ export type QuizPackSummary = {
   questionCount: number;
   importedAt: string;
   lastStudiedAt?: string | null;
+  allCorrect: boolean;
 };
 
 export type AnswerRecord = {

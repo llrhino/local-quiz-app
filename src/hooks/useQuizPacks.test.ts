@@ -32,6 +32,7 @@ const pack1: QuizPackSummary = {
   questionCount: 10,
   importedAt: '2026-03-10T00:00:00Z',
   lastStudiedAt: '2026-03-11T00:00:00Z',
+  allCorrect: false,
 };
 
 const pack2: QuizPackSummary = {
@@ -40,6 +41,7 @@ const pack2: QuizPackSummary = {
   questionCount: 5,
   importedAt: '2026-03-12T00:00:00Z',
   lastStudiedAt: null,
+  allCorrect: false,
 };
 
 describe('useQuizPacks', () => {
