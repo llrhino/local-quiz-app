@@ -3,7 +3,7 @@ import { render, screen, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import type { Question } from '../lib/types';
+import type { Question, TextInputQuestion } from '../lib/types';
 
 // モック
 const mockStartQuiz = vi.fn();
@@ -219,6 +219,77 @@ describe('QuizPage', () => {
 
       await user.click(screen.getByRole('button', { name: 'もう一度挑戦する' }));
       expect(mockStartQuiz).toHaveBeenCalledWith('pack-1');
+    });
+  });
+
+  describe('テキスト入力問題からの遷移', () => {
+    const textQuestions: Question[] = [
+      {
+        id: 'tq1',
+        type: 'text_input',
+        question: 'Q1は？',
+        answer: 'A1',
+      } satisfies TextInputQuestion,
+      {
+        id: 'tq2',
+        type: 'text_input',
+        question: 'Q2は？',
+        answer: 'A2',
+      } satisfies TextInputQuestion,
+    ];
+
+    it('回答後のEnterキーでpreventDefaultが呼ばれる', async () => {
+      setupSessionState({ questions: textQuestions });
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      // テキスト入力問題に回答（送信ボタンクリック）
+      await user.type(screen.getByPlaceholderText('解答を入力'), 'A1');
+      await user.click(screen.getByRole('button', { name: '送信' }));
+
+      // Enterキーのイベントを発火し、preventDefaultが呼ばれることを確認
+      const event = new KeyboardEvent('keydown', {
+        key: 'Enter',
+        bubbles: true,
+        cancelable: true,
+      });
+      act(() => {
+        window.dispatchEvent(event);
+      });
+      expect(event.defaultPrevented).toBe(true);
+    });
+
+    it('送信ボタンクリック後にEnterで次の問題に進んでも次のテキスト入力問題が自動送信されない', async () => {
+      let idx = 0;
+      mockUseQuizSession.mockImplementation(
+        () =>
+          ({
+            questions: textQuestions,
+            currentIndex: idx,
+            answers: [],
+            isCompleted: false,
+            startSession: vi.fn(),
+            submitAnswer: vi.fn(),
+            nextQuestion: () => {
+              idx++;
+            },
+            resetSession: mockResetSession,
+          }) as unknown as ReturnType<typeof useQuizSession>,
+      );
+
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      // テキスト入力問題に回答（送信ボタンクリック）
+      await user.type(screen.getByPlaceholderText('解答を入力'), 'A1');
+      await user.click(screen.getByRole('button', { name: '送信' }));
+      expect(mockSubmitAndSave).toHaveBeenCalledTimes(1);
+
+      // Enterで次の問題に進む
+      await user.keyboard('{Enter}');
+
+      // 次のテキスト入力問題が自動送信されていないことを確認
+      expect(mockSubmitAndSave).toHaveBeenCalledTimes(1);
     });
   });
 

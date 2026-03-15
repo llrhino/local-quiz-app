@@ -57,6 +57,7 @@ export default function QuizPage() {
     if (!answerResult) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Enter') {
+        e.preventDefault();
         handleNext();
       }
     };
