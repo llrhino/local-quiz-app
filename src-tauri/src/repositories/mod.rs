@@ -52,6 +52,23 @@ pub(crate) mod test_helpers {
                     answer: "RSA".to_string(),
                     explanation: None,
                 },
+                Question::MultiSelect {
+                    id: "q4".to_string(),
+                    question: "共通鍵暗号方式をすべて選べ".to_string(),
+                    choices: vec![
+                        Choice {
+                            text: "AES".to_string(),
+                        },
+                        Choice {
+                            text: "RSA".to_string(),
+                        },
+                        Choice {
+                            text: "DES".to_string(),
+                        },
+                    ],
+                    answer: vec![0, 2],
+                    explanation: Some("AESとDESは共通鍵暗号方式".to_string()),
+                },
             ],
         }
     }

@@ -7,6 +7,10 @@ const judgeStrategies: Record<QuestionType, JudgeFunction> = {
   true_false: (userAnswer, correctAnswer) => userAnswer === correctAnswer,
   text_input: (userAnswer, correctAnswer) =>
     userAnswer.trim() === correctAnswer.trim(),
+  multi_select: (userAnswer, correctAnswer) => {
+    const normalize = (s: string) => s.split(',').map((v) => v.trim()).sort().join(',');
+    return normalize(userAnswer) === normalize(correctAnswer);
+  },
 };
 
 export function judgeAnswer(

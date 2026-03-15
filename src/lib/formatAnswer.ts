@@ -14,5 +14,14 @@ export function formatDisplayAnswer(question: Question, rawAnswer: string): stri
     }
     case 'text_input':
       return rawAnswer;
+    case 'multi_select':
+      return rawAnswer
+        .split(',')
+        .map((idx) => {
+          const i = Number(idx.trim());
+          const choice = question.choices[i];
+          return choice ? choice.text : idx.trim();
+        })
+        .join(', ');
   }
 }

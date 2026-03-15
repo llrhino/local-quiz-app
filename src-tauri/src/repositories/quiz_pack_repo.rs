@@ -124,7 +124,7 @@ mod tests {
         let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
         assert_eq!(summaries.len(), 1);
         assert_eq!(summaries[0].id, pack.id);
-        assert_eq!(summaries[0].question_count, 3);
+        assert_eq!(summaries[0].question_count, 4);
         assert_eq!(summaries[0].last_studied_at, None);
         assert!(!summaries[0].all_correct, "学習履歴がないパックはall_correctがfalse");
 
@@ -148,8 +148,8 @@ mod tests {
         question_repo::insert_questions(&connection, &pack.id, &pack.questions)
             .expect("questions should be inserted");
 
-        // q1, q2, q3 すべてに正解の履歴を追加
-        for (qid, answer) in [("q1", "1"), ("q2", "true"), ("q3", "RSA")] {
+        // q1, q2, q3, q4 すべてに正解の履歴を追加
+        for (qid, answer) in [("q1", "1"), ("q2", "true"), ("q3", "RSA"), ("q4", "0,2")] {
             history_repo::insert_answer_record(
                 &connection,
                 &AnswerRecord {

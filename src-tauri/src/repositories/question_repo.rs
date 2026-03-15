@@ -115,6 +115,40 @@ pub fn get_questions_by_pack(connection: &Connection, pack_id: &str) -> RepoResu
                     Some(explanation)
                 },
             },
+            "multi_select" => {
+                let choices_json: String = row.get(3)?;
+                let choices =
+                    serde_json::from_str::<Vec<Choice>>(&choices_json).map_err(|error| {
+                        rusqlite::Error::FromSqlConversionFailure(
+                            3,
+                            rusqlite::types::Type::Text,
+                            Box::new(error),
+                        )
+                    })?;
+                let answer_str: String = row.get(4)?;
+                let answer: Vec<usize> = answer_str
+                    .split(',')
+                    .map(|s| s.trim().parse::<usize>())
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|error| {
+                        rusqlite::Error::FromSqlConversionFailure(
+                            4,
+                            rusqlite::types::Type::Text,
+                            Box::new(error),
+                        )
+                    })?;
+                Question::MultiSelect {
+                    id: row.get(0)?,
+                    question: row.get(2)?,
+                    choices,
+                    answer,
+                    explanation: if explanation.is_empty() {
+                        None
+                    } else {
+                        Some(explanation)
+                    },
+                }
+            }
             other => {
                 return Err(rusqlite::Error::FromSqlConversionFailure(
                     1,
@@ -144,7 +178,8 @@ impl QuestionPersistenceExt for Question {
         match self {
             Question::MultipleChoice { id, .. }
             | Question::TrueFalse { id, .. }
-            | Question::TextInput { id, .. } => id,
+            | Question::TextInput { id, .. }
+            | Question::MultiSelect { id, .. } => id,
         }
     }
 
@@ -152,7 +187,8 @@ impl QuestionPersistenceExt for Question {
         match self {
             Question::MultipleChoice { question, .. }
             | Question::TrueFalse { question, .. }
-            | Question::TextInput { question, .. } => question,
+            | Question::TextInput { question, .. }
+            | Question::MultiSelect { question, .. } => question,
         }
     }
 
@@ -160,7 +196,8 @@ impl QuestionPersistenceExt for Question {
         match self {
             Question::MultipleChoice { explanation, .. }
             | Question::TrueFalse { explanation, .. }
-            | Question::TextInput { explanation, .. } => explanation.as_deref(),
+            | Question::TextInput { explanation, .. }
+            | Question::MultiSelect { explanation, .. } => explanation.as_deref(),
         }
     }
 
@@ -169,12 +206,16 @@ impl QuestionPersistenceExt for Question {
             Question::MultipleChoice { answer, .. } => answer.to_string(),
             Question::TextInput { answer, .. } => answer.clone(),
             Question::TrueFalse { answer, .. } => answer.to_string(),
+            Question::MultiSelect { answer, .. } => {
+                answer.iter().map(|i| i.to_string()).collect::<Vec<_>>().join(",")
+            }
         }
     }
 
     fn choices_json(&self) -> Result<Option<String>, serde_json::Error> {
         match self {
-            Question::MultipleChoice { choices, .. } => serde_json::to_string(choices).map(Some),
+            Question::MultipleChoice { choices, .. }
+            | Question::MultiSelect { choices, .. } => serde_json::to_string(choices).map(Some),
             Question::TrueFalse { .. } | Question::TextInput { .. } => Ok(None),
         }
     }
@@ -184,6 +225,7 @@ impl QuestionPersistenceExt for Question {
             Question::MultipleChoice { .. } => QuestionType::MultipleChoice,
             Question::TrueFalse { .. } => QuestionType::TrueFalse,
             Question::TextInput { .. } => QuestionType::TextInput,
+            Question::MultiSelect { .. } => QuestionType::MultiSelect,
         }
     }
 }
@@ -198,6 +240,7 @@ impl QuestionTypePersistenceExt for QuestionType {
             QuestionType::MultipleChoice => "multiple_choice",
             QuestionType::TrueFalse => "true_false",
             QuestionType::TextInput => "text_input",
+            QuestionType::MultiSelect => "multi_select",
         }
     }
 }

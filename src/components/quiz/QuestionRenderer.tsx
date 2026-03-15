@@ -1,5 +1,6 @@
 import type { Question } from '../../lib/types';
 import MultipleChoiceQuestion from './MultipleChoiceQuestion';
+import MultiSelectQuestion from './MultiSelectQuestion';
 import TextInputQuestion from './TextInputQuestion';
 import TrueFalseQuestion from './TrueFalseQuestion';
 
@@ -50,6 +51,16 @@ export default function QuestionRenderer({
           question={question}
           onAnswer={onAnswer}
           disabled={disabled}
+        />
+      );
+    case 'multi_select':
+      return (
+        <MultiSelectQuestion
+          question={question}
+          onAnswer={onAnswer}
+          disabled={disabled}
+          answerResult={answerResult}
+          correctAnswer={correctAnswer}
         />
       );
     default:

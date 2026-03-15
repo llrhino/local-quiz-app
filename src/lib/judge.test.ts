@@ -44,6 +44,28 @@ describe('judgeAnswer', () => {
     });
   });
 
+  describe('multi_select', () => {
+    it('選択肢インデックスが完全一致する場合、正解と判定する', () => {
+      expect(judgeAnswer('multi_select', '0,2', '0,2')).toBe(true);
+    });
+
+    it('選択肢インデックスが一致しない場合、不正解と判定する', () => {
+      expect(judgeAnswer('multi_select', '0,1', '0,2')).toBe(false);
+    });
+
+    it('部分一致は不正解と判定する', () => {
+      expect(judgeAnswer('multi_select', '0', '0,2')).toBe(false);
+    });
+
+    it('順序が異なっても正解と判定する', () => {
+      expect(judgeAnswer('multi_select', '2,0', '0,2')).toBe(true);
+    });
+
+    it('単一選択でも正解と判定する', () => {
+      expect(judgeAnswer('multi_select', '1', '1')).toBe(true);
+    });
+  });
+
   describe('未知の問題タイプ', () => {
     it('未知の問題タイプの場合、エラーを投げる', () => {
       expect(() =>

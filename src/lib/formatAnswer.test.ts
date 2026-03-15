@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 
-import type { MultipleChoiceQuestion, TrueFalseQuestion, TextInputQuestion } from './types';
+import type { MultipleChoiceQuestion, TrueFalseQuestion, TextInputQuestion, MultiSelectQuestion } from './types';
 import { formatDisplayAnswer } from './formatAnswer';
 
 describe('formatDisplayAnswer', () => {
@@ -57,6 +57,33 @@ describe('formatDisplayAnswer', () => {
 
     it('テキストをそのまま返す', () => {
       expect(formatDisplayAnswer(question, '東京')).toBe('東京');
+    });
+  });
+
+  describe('複数選択問題', () => {
+    const question: MultiSelectQuestion = {
+      id: 'q4',
+      type: 'multi_select',
+      question: '暗号化プロトコルはどれか？',
+      choices: [
+        { text: 'TLS' },
+        { text: 'HTTP' },
+        { text: 'IPsec' },
+        { text: 'DNS' },
+      ],
+      answer: [0, 2],
+    };
+
+    it('複数のインデックスを選択肢テキストに変換する', () => {
+      expect(formatDisplayAnswer(question, '0,2')).toBe('TLS, IPsec');
+    });
+
+    it('単一のインデックスを選択肢テキストに変換する', () => {
+      expect(formatDisplayAnswer(question, '1')).toBe('HTTP');
+    });
+
+    it('範囲外のインデックスが含まれる場合はそのまま返す', () => {
+      expect(formatDisplayAnswer(question, '0,99')).toBe('TLS, 99');
     });
   });
 });

@@ -1,4 +1,4 @@
-export type QuestionType = 'multiple_choice' | 'true_false' | 'text_input';
+export type QuestionType = 'multiple_choice' | 'true_false' | 'text_input' | 'multi_select';
 
 export type Choice = {
   text: string;
@@ -26,10 +26,17 @@ export type TextInputQuestion = QuestionBase & {
   answer: string;
 };
 
+export type MultiSelectQuestion = QuestionBase & {
+  type: 'multi_select';
+  choices: Choice[];
+  answer: number[];
+};
+
 export type Question =
   | MultipleChoiceQuestion
   | TrueFalseQuestion
-  | TextInputQuestion;
+  | TextInputQuestion
+  | MultiSelectQuestion;
 
 export type QuizPack = {
   id: string;

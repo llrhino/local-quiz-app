@@ -6,6 +6,7 @@ pub enum QuestionType {
     MultipleChoice,
     TrueFalse,
     TextInput,
+    MultiSelect,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -35,6 +36,13 @@ pub enum Question {
         answer: String,
         explanation: Option<String>,
     },
+    MultiSelect {
+        id: String,
+        question: String,
+        choices: Vec<Choice>,
+        answer: Vec<usize>,
+        explanation: Option<String>,
+    },
 }
 
 #[cfg(test)]
@@ -57,6 +65,57 @@ mod tests {
             result.is_ok(),
             "true_false問題はbooleanのanswerを受け付ける必要がある"
         );
+    }
+
+    #[test]
+    fn multi_select_questionを配列のanswerでデシリアライズできる() {
+        let json = r#"{
+            "id": "ms-001",
+            "type": "multi_select",
+            "question": "暗号化プロトコルはどれか？",
+            "choices": [
+                {"text": "TLS"},
+                {"text": "HTTP"},
+                {"text": "IPsec"},
+                {"text": "DNS"}
+            ],
+            "answer": [0, 2],
+            "explanation": "TLSとIPsecは暗号化プロトコル"
+        }"#;
+
+        let result = serde_json::from_str::<Question>(json);
+
+        assert!(
+            result.is_ok(),
+            "multi_select問題は配列のanswerを受け付ける必要がある: {:?}",
+            result.err()
+        );
+
+        match result.unwrap() {
+            Question::MultiSelect { answer, choices, .. } => {
+                assert_eq!(answer, vec![0, 2]);
+                assert_eq!(choices.len(), 4);
+            }
+            _ => panic!("multi_selectとしてデシリアライズされるべき"),
+        }
+    }
+
+    #[test]
+    fn multi_select_questionを期待するjson形状でシリアライズできる() {
+        let question = Question::MultiSelect {
+            id: "ms-001".to_string(),
+            question: "暗号化プロトコルはどれか？".to_string(),
+            choices: vec![
+                Choice { text: "TLS".to_string() },
+                Choice { text: "HTTP".to_string() },
+            ],
+            answer: vec![0],
+            explanation: None,
+        };
+
+        let value = serde_json::to_value(&question).expect("multi_select問題をシリアライズできること");
+        assert_eq!(value["type"], "multi_select");
+        assert_eq!(value["answer"], serde_json::json!([0]));
     }
 
     #[test]

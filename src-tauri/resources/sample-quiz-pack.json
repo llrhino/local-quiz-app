@@ -2,7 +2,7 @@
   "pack": {
     "id": "sample-security-basics",
     "name": "情報セキュリティ基礎（サンプル）",
-    "description": "情報セキュリティに関する基礎知識を問うサンプルクイズパックです。3種類の問題形式（選択式・○×・テキスト入力）を含みます。"
+    "description": "情報セキュリティに関する基礎知識を問うサンプルクイズパックです。4種類の問題形式（選択式・複数選択式・○×・テキスト入力）を含みます。"
   },
   "questions": [
     {
@@ -98,6 +98,19 @@
       "question": "ネットワーク上の通信を暗号化するプロトコルで、「Transport Layer Security」の略称は？（アルファベット3文字）",
       "answer": "TLS",
       "explanation": "TLS（Transport Layer Security）は、インターネット上の通信を暗号化するプロトコルです。SSLの後継にあたります。"
+    },
+    {
+      "id": "q-011",
+      "type": "multi_select",
+      "question": "次のうち、共通鍵暗号方式のアルゴリズムをすべて選びなさい。",
+      "choices": [
+        { "text": "AES" },
+        { "text": "RSA" },
+        { "text": "DES" },
+        { "text": "ElGamal" }
+      ],
+      "answer": [0, 2],
+      "explanation": "AESとDESは共通鍵暗号方式です。RSAとElGamalは公開鍵暗号方式です。"
     }
   ]
 }

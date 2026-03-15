@@ -97,7 +97,7 @@ fn validate_questions(questions: &[serde_json::Value]) -> Result<Vec<Question>, 
 
         // 問題タイプのチェック
         let question_type = match value.get("type").and_then(|v| v.as_str()) {
-            Some(t @ ("multiple_choice" | "true_false" | "text_input")) => t,
+            Some(t @ ("multiple_choice" | "true_false" | "text_input" | "multi_select")) => t,
             Some(invalid) => {
                 errors.push(format!(
                     "Question ID: {question_id} / Field: type / Error: 不正な問題タイプです: {invalid}"
@@ -143,6 +143,9 @@ fn validate_questions(questions: &[serde_json::Value]) -> Result<Vec<Question>, 
             }
             "text_input" => {
                 validate_text_input(value, question_id, &mut errors);
+            }
+            "multi_select" => {
+                validate_multi_select(value, question_id, &mut errors);
             }
             _ => unreachable!(),
         }
@@ -232,6 +235,70 @@ fn validate_text_input(value: &serde_json::Value, question_id: &str, errors: &mu
         None => {
             errors.push(format!(
                 "Question ID: {question_id} / Field: answer / Error: 必須フィールドがありません"
+            ));
+        }
+    }
+}
+
+/// multi_select 問題のバリデーション
+fn validate_multi_select(
+    value: &serde_json::Value,
+    question_id: &str,
+    errors: &mut Vec<String>,
+) {
+    // choices のチェック
+    let choices = match value.get("choices").and_then(|v| v.as_array()) {
+        Some(c) => c,
+        None => {
+            errors.push(format!(
+                "Question ID: {question_id} / Field: choices / Error: 必須フィールドがありません"
+            ));
+            return;
+        }
+    };
+
+    let count = choices.len();
+    if !(2..=6).contains(&count) {
+        errors.push(format!(
+            "Question ID: {question_id} / Field: choices / Error: 選択肢は2〜6個である必要があります（現在: {count}個）"
+        ));
+    }
+
+    // answer のチェック（選択肢インデックスの配列）
+    match value.get("answer").and_then(|v| v.as_array()) {
+        Some(answer_array) => {
+            if answer_array.is_empty() {
+                errors.push(format!(
+                    "Question ID: {question_id} / Field: answer / Error: 回答配列は1個以上の要素が必要です"
+                ));
+            }
+
+            let mut seen_indices: HashSet<u64> = HashSet::new();
+            for (i, elem) in answer_array.iter().enumerate() {
+                match elem.as_u64() {
+                    Some(idx) => {
+                        if idx as usize >= count {
+                            errors.push(format!(
+                                "Question ID: {question_id} / Field: answer[{i}] / Error: 回答インデックスが選択肢の範囲外です: {idx}（選択肢数: {count}）"
+                            ));
+                        }
+                        if !seen_indices.insert(idx) {
+                            errors.push(format!(
+                                "Question ID: {question_id} / Field: answer / Error: 回答インデックスが重複しています: {idx}"
+                            ));
+                        }
+                    }
+                    None => {
+                        errors.push(format!(
+                            "Question ID: {question_id} / Field: answer[{i}] / Error: 回答インデックスは整数である必要があります"
+                        ));
+                    }
+                }
+            }
+        }
+        None => {
+            errors.push(format!(
+                "Question ID: {question_id} / Field: answer / Error: 必須フィールドがありません（選択肢のインデックスの配列で指定してください）"
             ));
         }
     }
@@ -787,6 +854,167 @@ mod tests {
         let pack = result.unwrap();
         assert_eq!(pack.id, "sample-security-basics");
         assert!(!pack.questions.is_empty());
+    }
+
+    // --- multi_select バリデーション ---
+
+    #[test]
+    fn multi_selectの有効な問題がバリデーションを通過する() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "暗号化プロトコルはどれか？",
+            "choices": [
+                {"text": "TLS"},
+                {"text": "HTTP"},
+                {"text": "IPsec"},
+                {"text": "DNS"}
+            ],
+            "answer": [0, 2]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_ok(), "有効なmulti_select問題がバリデーションを通過すること: {:?}", result.err());
+    }
+
+    #[test]
+    fn multi_selectでchoicesが欠けている場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "answer": [0, 1]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Field: choices"));
+    }
+
+    #[test]
+    fn multi_selectで選択肢が1個の場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [{"text": "1"}],
+            "answer": [0]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("2〜6個"));
+    }
+
+    #[test]
+    fn multi_selectで選択肢が7個の場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [
+                {"text": "1"}, {"text": "2"}, {"text": "3"}, {"text": "4"},
+                {"text": "5"}, {"text": "6"}, {"text": "7"}
+            ],
+            "answer": [0, 1]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("7個"));
+    }
+
+    #[test]
+    fn multi_selectでanswerが配列でない場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [{"text": "1"}, {"text": "2"}],
+            "answer": 0
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("Field: answer"));
+    }
+
+    #[test]
+    fn multi_selectでanswer配列が空の場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [{"text": "1"}, {"text": "2"}],
+            "answer": []
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("1個以上"));
+    }
+
+    #[test]
+    fn multi_selectでanswerインデックスが範囲外の場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [{"text": "1"}, {"text": "2"}],
+            "answer": [0, 3]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("範囲外"));
+    }
+
+    #[test]
+    fn multi_selectでanswerインデックスが重複している場合エラーを返す() {
+        let questions = vec![serde_json::json!({
+            "id": "q1",
+            "type": "multi_select",
+            "question": "テスト",
+            "choices": [{"text": "1"}, {"text": "2"}, {"text": "3"}],
+            "answer": [0, 0]
+        })];
+        let result = validate_questions(&questions);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(err.contains("重複"));
+    }
+
+    #[test]
+    fn multi_selectを含むパックをdbにインポートできる() {
+        let json = r#"{
+            "pack": { "id": "ms-pack", "name": "複数選択テスト" },
+            "questions": [
+                {
+                    "id": "q1",
+                    "type": "multi_select",
+                    "question": "暗号化プロトコルはどれか？",
+                    "choices": [
+                        {"text": "TLS"},
+                        {"text": "HTTP"},
+                        {"text": "IPsec"},
+                        {"text": "DNS"}
+                    ],
+                    "answer": [0, 2],
+                    "explanation": "TLSとIPsecは暗号化プロトコル"
+                }
+            ]
+        }"#;
+        let connection = open_test_connection();
+        let result = import_quiz_pack_from_str(json, &connection);
+        assert!(result.is_ok(), "multi_selectパックのインポートに失敗: {:?}", result.err());
+
+        let pack = result.unwrap();
+        assert_eq!(pack.questions.len(), 1);
+        match &pack.questions[0] {
+            Question::MultiSelect { answer, .. } => {
+                assert_eq!(answer, &vec![0, 2]);
+            }
+            _ => panic!("multi_selectとしてインポートされるべき"),
+        }
     }
 
     #[test]
