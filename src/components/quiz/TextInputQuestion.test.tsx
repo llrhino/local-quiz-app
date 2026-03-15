@@ -74,6 +74,26 @@ describe('TextInputQuestion', () => {
     expect(screen.getByPlaceholderText('解答を入力')).toHaveValue('');
   });
 
+  it('初期表示で入力欄にフォーカスされている', () => {
+    render(<TextInputQuestion question={question} onAnswer={vi.fn()} />);
+    expect(screen.getByPlaceholderText('解答を入力')).toHaveFocus();
+  });
+
+  it('問題が切り替わると入力欄に再フォーカスされる', async () => {
+    const question2: TIQType = {
+      id: 'q2',
+      type: 'text_input',
+      question: 'CSSの正式名称は？',
+      answer: 'Cascading Style Sheets',
+    };
+
+    const { rerender } = render(
+      <TextInputQuestion question={question} onAnswer={vi.fn()} />,
+    );
+    rerender(<TextInputQuestion question={question2} onAnswer={vi.fn()} />);
+    expect(screen.getByPlaceholderText('解答を入力')).toHaveFocus();
+  });
+
   it('disabled時は入力・送信ができない', () => {
     render(
       <TextInputQuestion question={question} onAnswer={vi.fn()} disabled />,

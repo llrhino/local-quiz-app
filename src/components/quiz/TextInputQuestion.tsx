@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { TextInputQuestion as TextInputQuestionType } from '../../lib/types';
 
@@ -14,10 +14,12 @@ export default function TextInputQuestion({
   disabled,
 }: Props) {
   const [value, setValue] = useState('');
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  // 問題が切り替わったら入力欄をクリアする
+  // 問題が切り替わったら入力欄をクリアしてフォーカスする
   useEffect(() => {
     setValue('');
+    inputRef.current?.focus();
   }, [question.id]);
 
   const handleSubmit = () => {
@@ -36,6 +38,7 @@ export default function TextInputQuestion({
       >
         <div className="flex gap-2">
           <input
+            ref={inputRef}
             className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
             disabled={disabled}
             onChange={(e) => setValue(e.target.value)}
