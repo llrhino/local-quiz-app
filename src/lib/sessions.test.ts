@@ -14,6 +14,7 @@ function makeRecord(
     isCorrect,
     userAnswer: isCorrect ? 'correct' : 'wrong',
     answeredAt,
+    sessionId: 'test-session',
   };
 }
 

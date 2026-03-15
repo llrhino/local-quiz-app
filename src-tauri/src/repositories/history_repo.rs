@@ -2,20 +2,21 @@ use std::error::Error;
 
 use rusqlite::{params, Connection};
 
-use crate::models::{AnswerRecord, PackStatistics, WeakQuestion};
+use crate::models::{AnswerRecord, PackStatistics, Session, WeakQuestion};
 
 type RepoResult<T> = Result<T, Box<dyn Error>>;
 
 pub fn insert_answer_record(connection: &Connection, record: &AnswerRecord) -> RepoResult<()> {
     connection.execute(
-        "INSERT INTO learning_history (pack_id, question_id, is_correct, user_answer, answered_at)
-         VALUES (?1, ?2, ?3, ?4, ?5);",
+        "INSERT INTO learning_history (pack_id, question_id, is_correct, user_answer, answered_at, session_id)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6);",
         params![
             record.pack_id,
             record.question_id,
             if record.is_correct { 1 } else { 0 },
             record.user_answer,
-            record.answered_at
+            record.answered_at,
+            record.session_id
         ],
     )?;
 
@@ -27,7 +28,7 @@ pub fn get_learning_history(
     pack_id: &str,
 ) -> RepoResult<Vec<AnswerRecord>> {
     let mut statement = connection.prepare(
-        "SELECT pack_id, question_id, is_correct, user_answer, answered_at
+        "SELECT pack_id, question_id, is_correct, user_answer, answered_at, session_id
          FROM learning_history
          WHERE pack_id = ?1
          ORDER BY answered_at ASC, id ASC;",
@@ -40,6 +41,7 @@ pub fn get_learning_history(
             is_correct: row.get::<_, i64>(2)? != 0,
             user_answer: row.get(3)?,
             answered_at: row.get(4)?,
+            session_id: row.get(5)?,
         })
     })?;
 
@@ -81,6 +83,38 @@ pub fn get_pack_statistics(connection: &Connection, pack_id: &str) -> RepoResult
         accuracy_rate,
         weak_eligible_count: weak_eligible_count as usize,
     })
+}
+
+/// セッション一覧を取得する（session_id でグルーピング）。
+/// 新しい順（降順）で返す。
+pub fn get_sessions(connection: &Connection, pack_id: &str) -> RepoResult<Vec<Session>> {
+    let mut statement = connection.prepare(
+        "SELECT session_id, MIN(answered_at) AS started_at, COUNT(*) AS total_answers,
+                COALESCE(SUM(is_correct), 0) AS correct_answers
+         FROM learning_history
+         WHERE pack_id = ?1 AND session_id != ''
+         GROUP BY session_id
+         ORDER BY started_at DESC;",
+    )?;
+
+    let rows = statement.query_map([pack_id], |row| {
+        let total_answers: i64 = row.get(2)?;
+        let correct_answers: i64 = row.get(3)?;
+        let accuracy_rate = if total_answers == 0 {
+            0.0
+        } else {
+            correct_answers as f64 / total_answers as f64
+        };
+        Ok(Session {
+            session_id: row.get(0)?,
+            started_at: row.get(1)?,
+            total_answers: total_answers as usize,
+            correct_answers: correct_answers as usize,
+            accuracy_rate,
+        })
+    })?;
+
+    Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
 /// 弱点問題を抽出する。
@@ -159,7 +193,8 @@ mod tests {
     use crate::repositories::test_helpers::{open_test_connection, sample_history, sample_pack};
 
     use super::{
-        get_learning_history, get_pack_statistics, get_weak_questions, insert_answer_record,
+        get_learning_history, get_pack_statistics, get_sessions, get_weak_questions,
+        insert_answer_record,
     };
 
     #[test]
@@ -239,6 +274,7 @@ mod tests {
                     is_correct: true,
                     user_answer: "1".to_string(),
                     answered_at: "2026-03-10T10:00:00Z".to_string(),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -254,6 +290,7 @@ mod tests {
                     is_correct: false,
                     user_answer: "false".to_string(),
                     answered_at: "2026-03-10T10:05:00Z".to_string(),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -287,6 +324,7 @@ mod tests {
                     is_correct: false,
                     user_answer: "0".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -301,6 +339,7 @@ mod tests {
                     is_correct: true,
                     user_answer: "1".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -334,6 +373,7 @@ mod tests {
                 is_correct: false,
                 user_answer: "0".to_string(),
                 answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
             },
         )
         .expect("history should be inserted");
@@ -347,6 +387,7 @@ mod tests {
                     is_correct: true,
                     user_answer: "1".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -381,6 +422,7 @@ mod tests {
                     is_correct: false,
                     user_answer: "0".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -394,6 +436,7 @@ mod tests {
                     is_correct: true,
                     user_answer: "1".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -428,6 +471,7 @@ mod tests {
                 is_correct: true,
                 user_answer: "1".to_string(),
                 answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
             },
         )
         .expect("history should be inserted");
@@ -440,6 +484,7 @@ mod tests {
                     is_correct: false,
                     user_answer: "0".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -477,6 +522,7 @@ mod tests {
                     is_correct: false,
                     user_answer: "0".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -490,6 +536,7 @@ mod tests {
                 is_correct: false,
                 user_answer: "0".to_string(),
                 answered_at: "2026-03-10T10:05:00Z".to_string(),
+                session_id: "test-session".to_string(),
             },
         )
         .expect("history should be inserted");
@@ -503,6 +550,7 @@ mod tests {
                     is_correct: true,
                     user_answer: "1".to_string(),
                     answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -516,5 +564,69 @@ mod tests {
             weak.is_empty(),
             "直近5回の正答率が80%なら弱点ではないこと（全期間では40%でも）"
         );
+    }
+
+    // --- get_sessions ---
+
+    #[test]
+    fn groups_answers_by_session_id() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // セッション1: 3問
+        for (i, qid) in ["q1", "q2", "q3"].iter().enumerate() {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: qid.to_string(),
+                    is_correct: i != 1,
+                    user_answer: "a".to_string(),
+                    answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "sess-1".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        // セッション2: 2問
+        for (i, qid) in ["q1", "q2"].iter().enumerate() {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: qid.to_string(),
+                    is_correct: true,
+                    user_answer: "a".to_string(),
+                    answered_at: format!("2026-03-10T11:{:02}:00Z", i),
+                    session_id: "sess-2".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        let sessions = get_sessions(&connection, &pack.id).expect("sessions should be returned");
+
+        assert_eq!(sessions.len(), 2);
+        // 新しい順
+        assert_eq!(sessions[0].session_id, "sess-2");
+        assert_eq!(sessions[0].total_answers, 2);
+        assert_eq!(sessions[0].correct_answers, 2);
+        assert!((sessions[0].accuracy_rate - 1.0).abs() < f64::EPSILON);
+
+        assert_eq!(sessions[1].session_id, "sess-1");
+        assert_eq!(sessions[1].total_answers, 3);
+        assert_eq!(sessions[1].correct_answers, 2);
+        assert!((sessions[1].accuracy_rate - 2.0 / 3.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn returns_empty_sessions_for_unknown_pack() {
+        let connection = open_test_connection();
+        let sessions = get_sessions(&connection, "nonexistent").expect("should return empty");
+        assert!(sessions.is_empty());
     }
 }

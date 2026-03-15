@@ -28,6 +28,7 @@ pub fn build_app() -> tauri::Builder<tauri::Wry> {
             commands::history::save_answer_record,
             commands::history::get_learning_history,
             commands::history::get_pack_statistics,
+            commands::history::get_sessions,
             commands::history::get_weak_questions,
             commands::settings::get_settings,
             commands::settings::update_setting,

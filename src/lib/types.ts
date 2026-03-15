@@ -55,6 +55,16 @@ export type AnswerRecord = {
   isCorrect: boolean;
   userAnswer: string;
   answeredAt: string;
+  sessionId: string;
+};
+
+/** セッション単位の集計結果 */
+export type Session = {
+  sessionId: string;
+  startedAt: string;
+  totalAnswers: number;
+  correctAnswers: number;
+  accuracyRate: number;
 };
 
 export type PackStatistics = {

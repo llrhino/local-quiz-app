@@ -7,6 +7,7 @@ import type {
   Question,
   QuizPack,
   QuizPackSummary,
+  Session,
   WeakQuestion,
 } from './types';
 
@@ -32,6 +33,9 @@ export const getLearningHistory = (packId: string) =>
 
 export const getPackStatistics = (packId: string) =>
   invoke<PackStatistics>('get_pack_statistics', { packId });
+
+export const getSessions = (packId: string) =>
+  invoke<Session[]>('get_sessions', { packId });
 
 export const getWeakQuestions = (packId: string) =>
   invoke<WeakQuestion[]>('get_weak_questions', { packId });

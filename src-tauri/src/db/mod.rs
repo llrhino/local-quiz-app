@@ -137,7 +137,7 @@ mod tests {
             })
             .expect("schema version should be readable");
 
-        assert_eq!(user_version, 1);
+        assert_eq!(user_version, 2);
 
         std::fs::remove_file(path).expect("test database file should be removed");
     }

@@ -2,8 +2,7 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 
-import type { PackStatistics, WeakQuestion } from '../lib/types';
-import type { Session } from '../lib/sessions';
+import type { PackStatistics, Session, WeakQuestion } from '../lib/types';
 
 vi.mock('../hooks/useHistoryData', () => ({
   useHistoryData: vi.fn(),
@@ -16,12 +15,14 @@ const mockUseHistoryData = vi.mocked(useHistoryData);
 
 const sampleSessions: Session[] = [
   {
+    sessionId: 'sess-1',
     startedAt: '2026-03-11T14:00:00Z',
     totalAnswers: 5,
     correctAnswers: 4,
     accuracyRate: 0.8,
   },
   {
+    sessionId: 'sess-2',
     startedAt: '2026-03-10T10:00:00Z',
     totalAnswers: 5,
     correctAnswers: 3,

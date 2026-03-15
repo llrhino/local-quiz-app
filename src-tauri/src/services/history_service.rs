@@ -1,6 +1,6 @@
 use rusqlite::Connection;
 
-use crate::models::{AnswerRecord, PackStatistics, WeakQuestion};
+use crate::models::{AnswerRecord, PackStatistics, Session, WeakQuestion};
 use crate::repositories::history_repo;
 
 /// 回答記録を1件保存する
@@ -25,6 +25,14 @@ pub fn get_pack_statistics(
     pack_id: &str,
 ) -> Result<PackStatistics, Box<dyn std::error::Error>> {
     history_repo::get_pack_statistics(connection, pack_id)
+}
+
+/// セッション一覧を取得する（session_id でグルーピング、新しい順）
+pub fn get_sessions(
+    connection: &Connection,
+    pack_id: &str,
+) -> Result<Vec<Session>, Box<dyn std::error::Error>> {
+    history_repo::get_sessions(connection, pack_id)
 }
 
 /// 弱点問題を抽出する（2回以上回答かつ直近5回の正答率80%未満、正答率の低い順）

@@ -27,7 +27,7 @@ export function useQuizSessionActions() {
 
   const submitAndSave = useCallback(
     async (packId: string, userAnswer: string) => {
-      const { questions, currentIndex } = useQuizSession.getState();
+      const { questions, currentIndex, sessionId } = useQuizSession.getState();
       const question = questions[currentIndex];
 
       const correctAnswer = getCorrectAnswer(question);
@@ -45,6 +45,7 @@ export function useQuizSessionActions() {
           isCorrect,
           userAnswer,
           answeredAt: new Date().toISOString(),
+          sessionId,
         });
       } catch {
         // 履歴保存失敗は無視（回答自体はストアに記録済み）

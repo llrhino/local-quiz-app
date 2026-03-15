@@ -17,6 +17,7 @@ type QuizSessionState = {
   answers: string[];
   isCompleted: boolean;
   streak: number;
+  sessionId: string;
   startSession: (questions: Question[], shuffle?: boolean) => void;
   submitAnswer: (answer: string) => void;
   nextQuestion: () => void;
@@ -30,6 +31,7 @@ const initialState = {
   answers: [] as string[],
   isCompleted: false,
   streak: 0,
+  sessionId: '',
 };
 
 export const useQuizSession = create<QuizSessionState>((set, get) => ({
@@ -42,6 +44,7 @@ export const useQuizSession = create<QuizSessionState>((set, get) => ({
       answers: [],
       isCompleted: false,
       streak: 0,
+      sessionId: crypto.randomUUID(),
     }),
 
   submitAnswer: (answer) =>

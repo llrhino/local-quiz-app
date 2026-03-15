@@ -1,13 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import {
-  getLearningHistory,
   getPackStatistics,
+  getSessions,
   getWeakQuestions,
 } from '../lib/commands';
-import { groupIntoSessions } from '../lib/sessions';
-import type { Session } from '../lib/sessions';
-import type { PackStatistics, WeakQuestion } from '../lib/types';
+import type { PackStatistics, Session, WeakQuestion } from '../lib/types';
 
 export function useHistoryData(packId: string) {
   const [sessions, setSessions] = useState<Session[]>([]);
@@ -18,12 +16,12 @@ export function useHistoryData(packId: string) {
 
   const fetch = useCallback(async () => {
     try {
-      const [records, stats, weak] = await Promise.all([
-        getLearningHistory(packId),
+      const [sess, stats, weak] = await Promise.all([
+        getSessions(packId),
         getPackStatistics(packId),
         getWeakQuestions(packId),
       ]);
-      setSessions(groupIntoSessions(records));
+      setSessions(sess);
       setStatistics(stats);
       setWeakQuestions(weak);
       setError(null);

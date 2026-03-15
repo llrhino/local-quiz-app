@@ -2,37 +2,30 @@ import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 
 vi.mock('../lib/commands', () => ({
-  getLearningHistory: vi.fn(),
+  getSessions: vi.fn(),
   getPackStatistics: vi.fn(),
   getWeakQuestions: vi.fn(),
 }));
 
 import {
-  getLearningHistory,
+  getSessions,
   getPackStatistics,
   getWeakQuestions,
 } from '../lib/commands';
 import { useHistoryData } from './useHistoryData';
-import type { AnswerRecord, PackStatistics, WeakQuestion } from '../lib/types';
+import type { PackStatistics, Session, WeakQuestion } from '../lib/types';
 
-const mockGetLearningHistory = vi.mocked(getLearningHistory);
+const mockGetSessions = vi.mocked(getSessions);
 const mockGetPackStatistics = vi.mocked(getPackStatistics);
 const mockGetWeakQuestions = vi.mocked(getWeakQuestions);
 
-const sampleRecords: AnswerRecord[] = [
+const sampleSessions: Session[] = [
   {
-    packId: 'pack-1',
-    questionId: 'q1',
-    isCorrect: true,
-    userAnswer: 'A',
-    answeredAt: '2026-03-10T10:00:00Z',
-  },
-  {
-    packId: 'pack-1',
-    questionId: 'q2',
-    isCorrect: false,
-    userAnswer: 'B',
-    answeredAt: '2026-03-10T10:05:00Z',
+    sessionId: 'sess-1',
+    startedAt: '2026-03-10T10:00:00Z',
+    totalAnswers: 2,
+    correctAnswers: 1,
+    accuracyRate: 0.5,
   },
 ];
 
@@ -41,6 +34,7 @@ const sampleStatistics: PackStatistics = {
   totalAnswers: 10,
   correctAnswers: 7,
   accuracyRate: 0.7,
+  weakEligibleCount: 2,
 };
 
 const sampleWeakQuestions: WeakQuestion[] = [
@@ -56,7 +50,7 @@ const sampleWeakQuestions: WeakQuestion[] = [
 describe('useHistoryData', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockGetLearningHistory.mockResolvedValue(sampleRecords);
+    mockGetSessions.mockResolvedValue(sampleSessions);
     mockGetPackStatistics.mockResolvedValue(sampleStatistics);
     mockGetWeakQuestions.mockResolvedValue(sampleWeakQuestions);
   });
@@ -77,7 +71,7 @@ describe('useHistoryData', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockGetLearningHistory).toHaveBeenCalledWith('pack-1');
+    expect(mockGetSessions).toHaveBeenCalledWith('pack-1');
     expect(mockGetPackStatistics).toHaveBeenCalledWith('pack-1');
     expect(mockGetWeakQuestions).toHaveBeenCalledWith('pack-1');
   });
@@ -102,21 +96,21 @@ describe('useHistoryData', () => {
     expect(result.current.weakQuestions).toEqual(sampleWeakQuestions);
   });
 
-  it('回答記録をセッションにグルーピングして返す', async () => {
+  it('セッション一覧をバックエンドから取得して返す', async () => {
     const { result } = renderHook(() => useHistoryData('pack-1'));
 
     await waitFor(() => {
       expect(result.current.loading).toBe(false);
     });
 
-    // 2つの回答は5分間隔なので1セッション
     expect(result.current.sessions).toHaveLength(1);
     expect(result.current.sessions[0].totalAnswers).toBe(2);
     expect(result.current.sessions[0].correctAnswers).toBe(1);
+    expect(result.current.sessions[0].sessionId).toBe('sess-1');
   });
 
   it('データ取得失敗時にエラーを設定する', async () => {
-    mockGetLearningHistory.mockRejectedValue(new Error('DB接続エラー'));
+    mockGetSessions.mockRejectedValue(new Error('DB接続エラー'));
 
     const { result } = renderHook(() => useHistoryData('pack-1'));
 
@@ -128,12 +122,13 @@ describe('useHistoryData', () => {
   });
 
   it('履歴がない場合は空のセッションと統計を返す', async () => {
-    mockGetLearningHistory.mockResolvedValue([]);
+    mockGetSessions.mockResolvedValue([]);
     mockGetPackStatistics.mockResolvedValue({
       packId: 'pack-1',
       totalAnswers: 0,
       correctAnswers: 0,
       accuracyRate: 0,
+      weakEligibleCount: 0,
     });
     mockGetWeakQuestions.mockResolvedValue([]);
 

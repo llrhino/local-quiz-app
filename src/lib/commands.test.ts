@@ -79,6 +79,7 @@ describe('commands.ts Tauriコマンドラッパー', () => {
         isCorrect: true,
         userAnswer: 'a',
         answeredAt: '2026-03-12T00:00:00Z',
+        sessionId: 'test-session',
       };
       mockInvoke.mockResolvedValue(undefined);
       await saveAnswerRecord(record);

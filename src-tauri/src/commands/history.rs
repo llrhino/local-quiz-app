@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::db::Database;
-use crate::models::{AnswerRecord, PackStatistics, WeakQuestion};
+use crate::models::{AnswerRecord, PackStatistics, Session, WeakQuestion};
 use crate::services::history_service;
 
 #[tauri::command]
@@ -39,6 +39,19 @@ pub fn get_pack_statistics(
         .with_connection(|connection| {
             let stats = history_service::get_pack_statistics(connection, &pack_id)?;
             Ok(stats)
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn get_sessions(
+    pack_id: String,
+    database: State<'_, Database>,
+) -> Result<Vec<Session>, String> {
+    database
+        .with_connection(|connection| {
+            let sessions = history_service::get_sessions(connection, &pack_id)?;
+            Ok(sessions)
         })
         .map_err(|e| e.to_string())
 }

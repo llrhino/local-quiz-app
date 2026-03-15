@@ -164,6 +164,7 @@ describe('types.ts 型定義', () => {
         isCorrect: true,
         userAnswer: 'a',
         answeredAt: '2026-03-12T00:00:00Z',
+        sessionId: 'test-session',
       };
       expect(record.packId).toBe('pack-1');
       expect(record.isCorrect).toBe(true);

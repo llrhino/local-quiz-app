@@ -8,6 +8,18 @@ pub struct AnswerRecord {
     pub is_correct: bool,
     pub user_answer: String,
     pub answered_at: String,
+    pub session_id: String,
+}
+
+/// セッション単位の集計結果
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Session {
+    pub session_id: String,
+    pub started_at: String,
+    pub total_answers: usize,
+    pub correct_answers: usize,
+    pub accuracy_rate: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

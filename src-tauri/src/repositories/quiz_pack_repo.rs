@@ -158,6 +158,7 @@ mod tests {
                     is_correct: true,
                     user_answer: answer.to_string(),
                     answered_at: "2026-03-10T10:00:00Z".to_string(),
+                    session_id: "test-session".to_string(),
                 },
             )
             .expect("history should be inserted");
@@ -188,6 +189,7 @@ mod tests {
                 is_correct: true,
                 user_answer: "1".to_string(),
                 answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
             },
         )
         .expect("history should be inserted");
@@ -199,6 +201,7 @@ mod tests {
                 is_correct: false,
                 user_answer: "false".to_string(),
                 answered_at: "2026-03-10T10:05:00Z".to_string(),
+                session_id: "test-session".to_string(),
             },
         )
         .expect("history should be inserted");

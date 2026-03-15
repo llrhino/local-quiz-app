@@ -64,6 +64,7 @@ pub(crate) mod test_helpers {
                 is_correct: false,
                 user_answer: "0".to_string(),
                 answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "session-1".to_string(),
             },
             AnswerRecord {
                 pack_id: "security-pack".to_string(),
@@ -71,6 +72,7 @@ pub(crate) mod test_helpers {
                 is_correct: true,
                 user_answer: "1".to_string(),
                 answered_at: "2026-03-10T10:05:00Z".to_string(),
+                session_id: "session-1".to_string(),
             },
             AnswerRecord {
                 pack_id: "security-pack".to_string(),
@@ -78,6 +80,7 @@ pub(crate) mod test_helpers {
                 is_correct: false,
                 user_answer: "false".to_string(),
                 answered_at: "2026-03-10T10:10:00Z".to_string(),
+                session_id: "session-1".to_string(),
             },
             AnswerRecord {
                 pack_id: "security-pack".to_string(),
@@ -85,6 +88,7 @@ pub(crate) mod test_helpers {
                 is_correct: false,
                 user_answer: "false".to_string(),
                 answered_at: "2026-03-10T10:15:00Z".to_string(),
+                session_id: "session-1".to_string(),
             },
             AnswerRecord {
                 pack_id: "security-pack".to_string(),
@@ -92,6 +96,7 @@ pub(crate) mod test_helpers {
                 is_correct: true,
                 user_answer: "RSA".to_string(),
                 answered_at: "2026-03-10T10:20:00Z".to_string(),
+                session_id: "session-1".to_string(),
             },
         ]
     }

@@ -96,7 +96,7 @@ export default function HistoryPage() {
             <div className="space-y-2">
               {sessions.map((session) => (
                 <div
-                  key={session.startedAt}
+                  key={session.sessionId}
                   className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-3 dark:border-slate-700"
                   data-testid="session-item"
                 >
