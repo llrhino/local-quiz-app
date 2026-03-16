@@ -26,6 +26,7 @@ const pack1: QuizPackSummary = {
   id: 'pack-1',
   name: 'JavaScript基礎',
   description: 'JSの基本を学ぶ',
+  source: 'import',
   questionCount: 10,
   importedAt: '2026-03-10T09:00:00Z',
   lastStudiedAt: '2026-03-11T14:30:00Z',
@@ -35,6 +36,7 @@ const pack1: QuizPackSummary = {
 const pack2: QuizPackSummary = {
   id: 'pack-2',
   name: 'Rust入門',
+  source: 'import',
   questionCount: 5,
   importedAt: '2026-03-12T10:00:00Z',
   lastStudiedAt: null,
@@ -88,6 +90,7 @@ describe('HomePage', () => {
         refresh: mockRefresh,
         importPack: mockImportPack,
         forceImportPack: mockForceImportPack,
+        seedSample: mockSeedSample,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
       });
@@ -106,6 +109,7 @@ describe('HomePage', () => {
         refresh: mockRefresh,
         importPack: mockImportPack,
         forceImportPack: mockForceImportPack,
+        seedSample: mockSeedSample,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
       });
@@ -262,7 +266,9 @@ describe('HomePage', () => {
         refresh: mockRefresh,
         importPack: mockImportPack,
         forceImportPack: mockForceImportPack,
+        seedSample: mockSeedSample,
         deletePack: mockDeletePack,
+        exportPack: mockExportPack,
       });
       renderHomePage();
       expect(screen.getByRole('button', { name: 'インポート中...' })).toBeDisabled();

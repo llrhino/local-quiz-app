@@ -23,10 +23,10 @@ const sampleQuestions: Question[] = [
     type: 'multiple_choice',
     question: '日本の首都は？',
     choices: [
-      { id: 'a', text: '東京' },
-      { id: 'b', text: '大阪' },
+      { text: '東京' },
+      { text: '大阪' },
     ],
-    answer: 'a',
+    answer: 0,
   },
   {
     id: 'q2',
@@ -148,14 +148,14 @@ describe('useQuizSessionActions', () => {
 
       let judgeResult: { isCorrect: boolean } | undefined;
       await act(async () => {
-        judgeResult = await result.current.submitAndSave('pack-1', 'a');
+        judgeResult = await result.current.submitAndSave('pack-1', '0');
       });
 
       // 正解判定
       expect(judgeResult!.isCorrect).toBe(true);
 
       // ストアに回答が記録される
-      expect(useQuizSession.getState().answers).toEqual(['a']);
+      expect(useQuizSession.getState().answers).toEqual(['0']);
 
       // バックエンドに保存される
       expect(mockSaveAnswerRecord).toHaveBeenCalledWith(
@@ -163,7 +163,7 @@ describe('useQuizSessionActions', () => {
           packId: 'pack-1',
           questionId: 'q1',
           isCorrect: true,
-          userAnswer: 'a',
+          userAnswer: '0',
         }),
       );
     });
@@ -177,14 +177,14 @@ describe('useQuizSessionActions', () => {
 
       let judgeResult: { isCorrect: boolean } | undefined;
       await act(async () => {
-        judgeResult = await result.current.submitAndSave('pack-1', 'b');
+        judgeResult = await result.current.submitAndSave('pack-1', '1');
       });
 
       expect(judgeResult!.isCorrect).toBe(false);
       expect(mockSaveAnswerRecord).toHaveBeenCalledWith(
         expect.objectContaining({
           isCorrect: false,
-          userAnswer: 'b',
+          userAnswer: '1',
         }),
       );
     });
@@ -239,7 +239,7 @@ describe('useQuizSessionActions', () => {
       });
 
       await act(async () => {
-        await result.current.submitAndSave('pack-1', 'a');
+        await result.current.submitAndSave('pack-1', '0');
       });
 
       expect(useQuizSession.getState().streak).toBe(1);
@@ -254,7 +254,7 @@ describe('useQuizSessionActions', () => {
 
       // 1問目正解
       await act(async () => {
-        await result.current.submitAndSave('pack-1', 'a');
+        await result.current.submitAndSave('pack-1', '0');
       });
 
       act(() => {
@@ -281,12 +281,12 @@ describe('useQuizSessionActions', () => {
       // エラーが投げられない
       let judgeResult: { isCorrect: boolean } | undefined;
       await act(async () => {
-        judgeResult = await result.current.submitAndSave('pack-1', 'a');
+        judgeResult = await result.current.submitAndSave('pack-1', '0');
       });
 
       // 回答は記録される
       expect(judgeResult!.isCorrect).toBe(true);
-      expect(useQuizSession.getState().answers).toEqual(['a']);
+      expect(useQuizSession.getState().answers).toEqual(['0']);
     });
   });
 });

@@ -20,6 +20,7 @@ describe('appSettingsStore', () => {
     useAppSettingsStore.setState({
       questionOrder: 'sequential',
       theme: 'light',
+      shuffleChoices: false,
     });
   });
 
@@ -49,6 +50,7 @@ describe('appSettingsStore', () => {
       mockGetSettings.mockResolvedValue({
         questionOrder: 'random',
         theme: 'light',
+        shuffleChoices: false,
       });
 
       await useAppSettingsStore.getState().loadSettings();

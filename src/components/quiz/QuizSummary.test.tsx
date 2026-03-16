@@ -11,10 +11,10 @@ const questions: Question[] = [
     type: 'multiple_choice',
     question: '1+1は？',
     choices: [
-      { id: 'a', text: '1' },
-      { id: 'b', text: '2' },
+      { text: '1' },
+      { text: '2' },
     ],
-    answer: 'b',
+    answer: 1,
   },
   {
     id: 'q2',
@@ -33,7 +33,7 @@ const questions: Question[] = [
 describe('QuizSummary', () => {
   const defaultProps = {
     questions,
-    answers: ['b', 'true', '大阪'],
+    answers: ['1', 'true', '大阪'],
     onGoHome: vi.fn(),
     onRetry: vi.fn(),
   };
@@ -54,7 +54,7 @@ describe('QuizSummary', () => {
     render(
       <QuizSummary
         {...defaultProps}
-        answers={['b', 'true', '東京']}
+        answers={['1', 'true', '東京']}
       />,
     );
     expect(screen.getByText('3問中3問正解')).toBeInTheDocument();
@@ -110,7 +110,7 @@ describe('QuizSummary', () => {
     render(
       <QuizSummary
         {...defaultProps}
-        answers={['b', 'true', '東京']}
+        answers={['1', 'true', '東京']}
       />,
     );
     const rateElement = screen.getByText('100.0%');
@@ -129,7 +129,7 @@ describe('QuizSummary', () => {
     render(
       <QuizSummary
         {...defaultProps}
-        answers={['a', 'false', '大阪']}
+        answers={['0', 'false', '大阪']}
       />,
     );
     const rateElement = screen.getByText('0.0%');

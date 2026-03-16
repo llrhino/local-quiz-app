@@ -109,10 +109,11 @@ describe('types.ts 型定義', () => {
   });
 
   describe('QuizPack', () => {
-    it('id, name, importedAt, questions を持つ', () => {
+    it('id, name, source, importedAt, questions を持つ', () => {
       const pack: QuizPack = {
         id: 'pack-1',
         name: 'テストパック',
+        source: 'import',
         importedAt: '2026-03-12T00:00:00Z',
         questions: [],
       };
@@ -125,6 +126,7 @@ describe('types.ts 型定義', () => {
         id: 'pack-1',
         name: 'テストパック',
         description: '説明文',
+        source: 'import',
         importedAt: '2026-03-12T00:00:00Z',
         questions: [],
       };
@@ -137,8 +139,10 @@ describe('types.ts 型定義', () => {
       const summary: QuizPackSummary = {
         id: 'pack-1',
         name: 'テストパック',
+        source: 'import',
         questionCount: 10,
         importedAt: '2026-03-12T00:00:00Z',
+        allCorrect: false,
       };
       expect(summary.questionCount).toBe(10);
       expect(summary.lastStudiedAt).toBeUndefined();
@@ -148,9 +152,11 @@ describe('types.ts 型定義', () => {
       const summary: QuizPackSummary = {
         id: 'pack-1',
         name: 'テストパック',
+        source: 'import',
         questionCount: 5,
         importedAt: '2026-03-12T00:00:00Z',
         lastStudiedAt: null,
+        allCorrect: false,
       };
       expect(summary.lastStudiedAt).toBeNull();
     });
@@ -178,6 +184,7 @@ describe('types.ts 型定義', () => {
         totalAnswers: 100,
         correctAnswers: 80,
         accuracyRate: 0.8,
+        weakEligibleCount: 5,
       };
       expect(stats.accuracyRate).toBe(0.8);
     });
@@ -191,16 +198,22 @@ describe('types.ts 型定義', () => {
         answerCount: 5,
         accuracyRate: 0.2,
         lastUserAnswer: 'b',
+        questionType: 'multiple_choice',
+        correctAnswer: 'a',
+        choicesJson: null,
+        explanation: null,
+        lastIsCorrect: false,
       };
       expect(weak.accuracyRate).toBe(0.2);
     });
   });
 
   describe('AppSettings', () => {
-    it('questionOrder と theme を持つ', () => {
+    it('questionOrder と theme と shuffleChoices を持つ', () => {
       const settings: AppSettings = {
         questionOrder: 'sequential',
         theme: 'light',
+        shuffleChoices: false,
       };
       expect(settings.questionOrder).toBe('sequential');
     });
@@ -209,6 +222,7 @@ describe('types.ts 型定義', () => {
       const settings: AppSettings = {
         questionOrder: 'random',
         theme: 'light',
+        shuffleChoices: false,
       };
       expect(settings.questionOrder).toBe('random');
     });

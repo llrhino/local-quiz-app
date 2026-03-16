@@ -35,6 +35,7 @@ const pack1: QuizPackSummary = {
   id: 'pack-1',
   name: 'テストパック1',
   description: '説明1',
+  source: 'import',
   questionCount: 10,
   importedAt: '2026-03-10T00:00:00Z',
   lastStudiedAt: '2026-03-11T00:00:00Z',
@@ -44,6 +45,7 @@ const pack1: QuizPackSummary = {
 const pack2: QuizPackSummary = {
   id: 'pack-2',
   name: 'テストパック2',
+  source: 'import',
   questionCount: 5,
   importedAt: '2026-03-12T00:00:00Z',
   lastStudiedAt: null,
@@ -96,9 +98,11 @@ describe('useQuizPacks', () => {
     const pack3: QuizPackSummary = {
       id: 'pack-3',
       name: '新パック',
+      source: 'import',
       questionCount: 3,
       importedAt: '2026-03-12T12:00:00Z',
       lastStudiedAt: null,
+      allCorrect: false,
     };
     mockListQuizPacks.mockResolvedValue([pack1, pack2, pack3]);
 
@@ -115,6 +119,7 @@ describe('useQuizPacks', () => {
       mockImportQuizPack.mockResolvedValue({
         id: 'pack-3',
         name: '新パック',
+        source: 'import',
         importedAt: '2026-03-12T12:00:00Z',
         questions: [],
       });
@@ -183,6 +188,7 @@ describe('useQuizPacks', () => {
       mockImportQuizPack.mockResolvedValue({
         id: 'pack-3',
         name: '新パック',
+        source: 'import',
         importedAt: '2026-03-12T12:00:00Z',
         questions: [],
       });
@@ -233,7 +239,7 @@ describe('useQuizPacks', () => {
       });
 
       mockImportQuizPack.mockResolvedValue({
-        id: 'pack-3', name: '新パック', importedAt: '', questions: [],
+        id: 'pack-3', name: '新パック', source: 'import', importedAt: '', questions: [],
       });
 
       await act(async () => {
@@ -278,6 +284,7 @@ describe('useQuizPacks', () => {
       mockImportQuizPack.mockResolvedValue({
         id: 'pack-1',
         name: '更新パック',
+        source: 'import',
         importedAt: '2026-03-12T12:00:00Z',
         questions: [],
       });
@@ -315,15 +322,18 @@ describe('useQuizPacks', () => {
       mockSeedSamplePack.mockResolvedValue({
         id: 'sample-pack',
         name: 'サンプル',
+        source: 'import',
         importedAt: '',
         questions: [],
       });
       const samplePack: QuizPackSummary = {
         id: 'sample-pack',
         name: 'サンプル',
+        source: 'import',
         questionCount: 10,
         importedAt: '',
         lastStudiedAt: null,
+        allCorrect: false,
       };
       mockListQuizPacks
         .mockResolvedValueOnce([pack1, pack2])

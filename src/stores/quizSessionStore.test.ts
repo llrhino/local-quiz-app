@@ -9,10 +9,10 @@ const sampleQuestions: Question[] = [
     type: 'multiple_choice',
     question: '日本の首都は？',
     choices: [
-      { id: 'a', text: '東京' },
-      { id: 'b', text: '大阪' },
+      { text: '東京' },
+      { text: '大阪' },
     ],
-    answer: 'a',
+    answer: 0,
   },
   {
     id: 'q2',
