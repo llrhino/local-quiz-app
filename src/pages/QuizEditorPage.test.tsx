@@ -1,8 +1,8 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { QuizPack } from '../lib/types';
 
@@ -47,6 +47,7 @@ describe('QuizEditorPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    sessionStorage.clear();
     mockSaveQuizPack.mockResolvedValue(savedPack);
     mockOpenSaveFileDialog.mockResolvedValue('/tmp/pack.json');
     mockExportQuizPack.mockResolvedValue(undefined);
@@ -263,5 +264,131 @@ describe('QuizEditorPage', () => {
     window.dispatchEvent(event);
 
     expect(event.returnValue).toBe('');
+  });
+
+  describe('クラッシュリカバリ', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('10秒間隔でフォーム状態をsessionStorageに保存する', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderQuizEditorPage();
+
+      await user.type(screen.getByLabelText('パック名'), 'テストパック');
+      await user.click(screen.getByRole('button', { name: '設問を追加' }));
+
+      expect(sessionStorage.getItem('quiz-editor-recovery-new')).toBeNull();
+
+      await act(async () => { vi.advanceTimersByTime(10_000); });
+
+      const stored = sessionStorage.getItem('quiz-editor-recovery-new');
+      expect(stored).not.toBeNull();
+      const parsed = JSON.parse(stored!);
+      expect(parsed.name).toBe('テストパック');
+      expect(parsed.questions).toHaveLength(1);
+    });
+
+    it('リカバリデータが存在する場合に復元バナーを表示する', () => {
+      const recoveryData = {
+        name: '復元パック',
+        description: '復元説明',
+        questions: [
+          { id: 'q1', type: 'true_false', question: '復元設問', explanation: '', answer: true },
+        ],
+      };
+      sessionStorage.setItem('quiz-editor-recovery-new', JSON.stringify(recoveryData));
+
+      renderQuizEditorPage();
+
+      expect(screen.getByText('前回の未保存データがあります。')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '復元する' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '破棄する' })).toBeInTheDocument();
+    });
+
+    it('「復元する」を選択するとリカバリデータでフォームを復元する', async () => {
+      const user = userEvent.setup();
+      const recoveryData = {
+        name: '復元パック',
+        description: '復元説明',
+        questions: [
+          { id: 'q1', type: 'true_false', question: '復元設問', explanation: '', answer: true },
+        ],
+      };
+      sessionStorage.setItem('quiz-editor-recovery-new', JSON.stringify(recoveryData));
+
+      renderQuizEditorPage();
+      await user.click(screen.getByRole('button', { name: '復元する' }));
+
+      expect(screen.getByLabelText('パック名')).toHaveValue('復元パック');
+      expect(screen.getByLabelText('説明')).toHaveValue('復元説明');
+      expect(screen.getByTestId('question-card-q1')).toBeInTheDocument();
+      expect(screen.queryByText('前回の未保存データがあります。')).not.toBeInTheDocument();
+    });
+
+    it('「破棄する」を選択するとリカバリデータを削除して通常起動する', async () => {
+      const user = userEvent.setup();
+      const recoveryData = {
+        name: '破棄パック',
+        description: '',
+        questions: [],
+      };
+      sessionStorage.setItem('quiz-editor-recovery-new', JSON.stringify(recoveryData));
+
+      renderQuizEditorPage();
+      await user.click(screen.getByRole('button', { name: '破棄する' }));
+
+      expect(sessionStorage.getItem('quiz-editor-recovery-new')).toBeNull();
+      expect(screen.getByLabelText('パック名')).toHaveValue('');
+      expect(screen.queryByText('前回の未保存データがあります。')).not.toBeInTheDocument();
+    });
+
+    it('保存成功時にリカバリデータを削除する', async () => {
+      vi.useFakeTimers({ shouldAdvanceTime: true });
+      const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+      renderQuizEditorPage();
+
+      await user.type(screen.getByLabelText('パック名'), '保存テスト');
+      await user.click(screen.getByRole('button', { name: '設問を追加' }));
+      const card = screen.getByTestId('question-card-q1');
+      await user.selectOptions(within(card).getByLabelText('問題タイプ'), 'true_false');
+      await user.type(within(card).getByLabelText('設問文'), 'テスト設問');
+      await user.click(within(card).getByLabelText('正しい'));
+
+      // リカバリデータが保存されるまで待つ
+      await act(async () => { vi.advanceTimersByTime(10_000); });
+      expect(sessionStorage.getItem('quiz-editor-recovery-new')).not.toBeNull();
+
+      await user.click(screen.getByRole('button', { name: '保存' }));
+
+      expect(sessionStorage.getItem('quiz-editor-recovery-new')).toBeNull();
+    });
+
+    it('破損データの場合にクラッシュしない', () => {
+      sessionStorage.setItem('quiz-editor-recovery-new', '{invalid json!!!');
+
+      renderQuizEditorPage();
+
+      // クラッシュせず正常に表示される
+      expect(screen.getByRole('heading', { name: 'クイズパック作成' })).toBeInTheDocument();
+      expect(screen.queryByText('前回の未保存データがあります。')).not.toBeInTheDocument();
+    });
+
+    it('未保存変更がない状態で戻る場合にリカバリデータを削除する', async () => {
+      const recoveryData = {
+        name: '復元パック',
+        description: '',
+        questions: [],
+      };
+      sessionStorage.setItem('quiz-editor-recovery-new', JSON.stringify(recoveryData));
+
+      const user = userEvent.setup();
+      renderQuizEditorPage();
+
+      // 復元を破棄して通常起動（dirty=false）
+      await user.click(screen.getByRole('button', { name: '破棄する' }));
+      expect(sessionStorage.getItem('quiz-editor-recovery-new')).toBeNull();
+    });
   });
 });

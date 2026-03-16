@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 
 import Button from '../components/common/Button';
@@ -7,6 +7,34 @@ import { detectResetTargets, exportQuizPack, getQuizPack, openSaveFileDialog, sa
 import type { Question, QuestionType } from '../lib/types';
 
 const FIRST_HINT_STORAGE_KEY = 'quiz-editor-first-hint-dismissed';
+const RECOVERY_KEY_PREFIX = 'quiz-editor-recovery-';
+const RECOVERY_INTERVAL_MS = 10_000;
+
+type RecoveryData = {
+  name: string;
+  description: string;
+  questions: EditorQuestion[];
+};
+
+function getRecoveryKey(packId?: string): string {
+  return `${RECOVERY_KEY_PREFIX}${packId ?? 'new'}`;
+}
+
+function loadRecoveryData(packId?: string): RecoveryData | null {
+  try {
+    const stored = sessionStorage.getItem(getRecoveryKey(packId));
+    if (!stored) return null;
+    const parsed = JSON.parse(stored) as RecoveryData;
+    if (typeof parsed.name !== 'string' || !Array.isArray(parsed.questions)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function removeRecoveryData(packId?: string): void {
+  sessionStorage.removeItem(getRecoveryKey(packId));
+}
 const QUESTION_TYPE_OPTIONS: Array<{ value: QuestionType; label: string }> = [
   { value: 'multiple_choice', label: '択一選択' },
   { value: 'multi_select', label: '複数選択' },
@@ -261,6 +289,7 @@ export default function QuizEditorPage() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [resetTargets, setResetTargets] = useState<string[] | null>(null);
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
+  const [recoveryAvailable, setRecoveryAvailable] = useState<RecoveryData | null>(() => loadRecoveryData(packId));
   const questionSequence = useRef(0);
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -315,6 +344,45 @@ export default function QuizEditorPage() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [dirty]);
+
+  // リカバリデータの定期保存（10秒間隔）
+  const nameRef = useRef(name);
+  const descriptionRef = useRef(description);
+  const questionsRef = useRef(questions);
+  const dirtyRef = useRef(dirty);
+  nameRef.current = name;
+  descriptionRef.current = description;
+  questionsRef.current = questions;
+  dirtyRef.current = dirty;
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (!dirtyRef.current) return;
+      const data: RecoveryData = {
+        name: nameRef.current,
+        description: descriptionRef.current,
+        questions: questionsRef.current,
+      };
+      sessionStorage.setItem(getRecoveryKey(packId), JSON.stringify(data));
+    }, RECOVERY_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [packId]);
+
+  const handleRestore = useCallback(() => {
+    if (!recoveryAvailable) return;
+    setName(recoveryAvailable.name);
+    setDescription(recoveryAvailable.description);
+    setQuestions(recoveryAvailable.questions);
+    questionSequence.current = recoveryAvailable.questions.length;
+    setDirty(true);
+    setRecoveryAvailable(null);
+  }, [recoveryAvailable]);
+
+  const handleDiscard = useCallback(() => {
+    removeRecoveryData(packId);
+    setRecoveryAvailable(null);
+  }, [packId]);
 
   const markDirty = () => {
     setDirty(true);
@@ -412,6 +480,7 @@ export default function QuizEditorPage() {
       setSavedPackName(saved.name);
       setDirty(false);
       setResetTargets(null);
+      removeRecoveryData(packId);
       setNotification({ type: 'success', message: '保存しました' });
     } catch (error) {
       const message = error instanceof Error ? error.message : '保存に失敗しました';
@@ -557,6 +626,28 @@ export default function QuizEditorPage() {
           {showHint && (
             <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/60 dark:text-amber-200">
               このエディタは手動保存です。編集後は [保存] ボタンを押してください
+            </div>
+          )}
+
+          {recoveryAvailable && (
+            <div className="flex items-center justify-between rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900 dark:border-sky-800 dark:bg-sky-950/60 dark:text-sky-200">
+              <span>前回の未保存データがあります。</span>
+              <div className="flex gap-2">
+                <button
+                  className="rounded-full border border-sky-300 px-3 py-1 text-sm font-medium text-sky-700 transition hover:bg-sky-100 dark:border-sky-700 dark:text-sky-300 dark:hover:bg-sky-900"
+                  onClick={handleRestore}
+                  type="button"
+                >
+                  復元する
+                </button>
+                <button
+                  className="rounded-full border border-slate-300 px-3 py-1 text-sm font-medium text-slate-600 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-400 dark:hover:bg-slate-700"
+                  onClick={handleDiscard}
+                  type="button"
+                >
+                  破棄する
+                </button>
+              </div>
             </div>
           )}
 
