@@ -89,14 +89,32 @@ function QuizPackCard({
 }
 
 export default function HomePage() {
-  const { packs, loading, error, importing, importPack, seedSample, deletePack, exportPack } = useQuizPacks();
+  const { packs, loading, error, importing, importPack, forceImportPack, seedSample, deletePack, exportPack } = useQuizPacks();
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QuizPackSummary | null>(null);
+  const [updateImportFilePath, setUpdateImportFilePath] = useState<string | null>(null);
 
   const handleImport = async () => {
     setNotification(null);
-    const err = await importPack();
-    if (err) setNotification({ type: 'error', message: err });
+    const result = await importPack();
+    if (!result) return;
+    if (result.duplicateFilePath) {
+      setUpdateImportFilePath(result.duplicateFilePath);
+    } else if (result.error) {
+      setNotification({ type: 'error', message: result.error });
+    }
+  };
+
+  const handleForceImport = async () => {
+    if (!updateImportFilePath) return;
+    const filePath = updateImportFilePath;
+    setUpdateImportFilePath(null);
+    const err = await forceImportPack(filePath);
+    if (err) {
+      setNotification({ type: 'error', message: err });
+    } else {
+      setNotification({ type: 'success', message: 'パックを更新しました。' });
+    }
   };
 
   const handleDelete = async () => {
@@ -220,6 +238,23 @@ export default function HomePage() {
           >
             削除する
           </button>
+        </div>
+      </Modal>
+
+      <Modal
+        isOpen={updateImportFilePath !== null}
+        title="パックの更新"
+        onClose={() => setUpdateImportFilePath(null)}
+      >
+        <p className="mt-3 text-sm text-slate-600 dark:text-slate-400">
+          このパックは既にインポートされています。更新しますか？
+        </p>
+        <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+          学習履歴は可能な限り保持されます。正答が変更された問題の履歴はリセットされます。
+        </p>
+        <div className="mt-4 flex justify-end gap-2">
+          <Button onClick={() => setUpdateImportFilePath(null)}>キャンセル</Button>
+          <Button onClick={handleForceImport}>更新する</Button>
         </div>
       </Modal>
     </div>

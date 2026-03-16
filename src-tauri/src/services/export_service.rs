@@ -94,7 +94,7 @@ mod tests {
 
     /// テスト用にパックをDBに保存するヘルパー
     fn setup_pack(connection: &Connection) {
-        import_service::import_quiz_pack_from_str(valid_json(), connection)
+        import_service::import_quiz_pack_from_str(valid_json(), connection, false)
             .expect("テストデータのインポートに成功すること");
     }
 
@@ -108,7 +108,7 @@ mod tests {
 
         // エクスポートしたJSONを別の接続にインポートできることを確認
         let connection2 = open_test_connection();
-        let result = import_service::import_quiz_pack_from_str(&json, &connection2);
+        let result = import_service::import_quiz_pack_from_str(&json, &connection2, false);
         assert!(
             result.is_ok(),
             "エクスポートしたJSONが再インポートできること: {:?}",
@@ -166,7 +166,7 @@ mod tests {
             ]
         }"#;
         let connection = open_test_connection();
-        import_service::import_quiz_pack_from_str(json, &connection)
+        import_service::import_quiz_pack_from_str(json, &connection, false)
             .expect("テストデータのインポートに成功すること");
 
         let exported = export_quiz_pack_to_json(&connection, "no-desc")
@@ -194,7 +194,7 @@ mod tests {
         // ファイルが存在し、再インポートできることを確認
         let content = std::fs::read_to_string(&file_path).expect("ファイル読み込みに成功すること");
         let connection2 = open_test_connection();
-        let result = import_service::import_quiz_pack_from_str(&content, &connection2);
+        let result = import_service::import_quiz_pack_from_str(&content, &connection2, false);
         assert!(result.is_ok(), "ファイルからの再インポートに成功すること");
     }
 
@@ -262,14 +262,14 @@ mod tests {
             ]
         }"#;
         let source_connection = open_test_connection();
-        import_service::import_quiz_pack_from_str(json, &source_connection)
+        import_service::import_quiz_pack_from_str(json, &source_connection, false)
             .expect("初回インポートに成功すること");
 
         let exported = export_quiz_pack_to_json(&source_connection, "round-trip-pack")
             .expect("エクスポートに成功すること");
 
         let destination_connection = open_test_connection();
-        let reimported = import_service::import_quiz_pack_from_str(&exported, &destination_connection)
+        let reimported = import_service::import_quiz_pack_from_str(&exported, &destination_connection, false)
             .expect("再インポートに成功すること");
 
         let original: serde_json::Value =

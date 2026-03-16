@@ -7,6 +7,7 @@ import type { QuizPackSummary } from '../lib/types';
 
 // useQuizPacks のモック
 const mockImportPack = vi.fn();
+const mockForceImportPack = vi.fn();
 const mockSeedSample = vi.fn();
 const mockDeletePack = vi.fn();
 const mockExportPack = vi.fn();
@@ -61,6 +62,7 @@ describe('HomePage', () => {
       importing: false,
       refresh: mockRefresh,
       importPack: mockImportPack,
+      forceImportPack: mockForceImportPack,
       seedSample: mockSeedSample,
       deletePack: mockDeletePack,
       exportPack: mockExportPack,
@@ -85,6 +87,7 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
       });
@@ -102,6 +105,7 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
       });
@@ -119,6 +123,7 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         seedSample: mockSeedSample,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
@@ -166,6 +171,7 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         seedSample: mockSeedSample,
         deletePack: mockDeletePack,
         exportPack: mockExportPack,
@@ -217,6 +223,7 @@ describe('HomePage', () => {
         importing: false,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         seedSample: mockSeedSample,
         deletePack: mockDeletePack,
         exportPack: vi.fn(),
@@ -254,6 +261,7 @@ describe('HomePage', () => {
         importing: true,
         refresh: mockRefresh,
         importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
         deletePack: mockDeletePack,
       });
       renderHomePage();
@@ -262,7 +270,7 @@ describe('HomePage', () => {
 
     it('インポート失敗時にエラーメッセージを表示する', async () => {
       const user = userEvent.setup();
-      mockImportPack.mockResolvedValue('無効なJSON形式です');
+      mockImportPack.mockResolvedValue({ error: '無効なJSON形式です' });
       renderHomePage();
 
       await user.click(screen.getByRole('button', { name: 'インポート' }));
@@ -273,7 +281,7 @@ describe('HomePage', () => {
       const user = userEvent.setup();
       const multilineError =
         'Question ID: q1 / Field: type / Error: 不正な問題タイプです\nQuestion ID: q2 / Field: answer / Error: 必須フィールドがありません';
-      mockImportPack.mockResolvedValue(multilineError);
+      mockImportPack.mockResolvedValue({ error: multilineError });
       renderHomePage();
 
       await user.click(screen.getByRole('button', { name: 'インポート' }));
@@ -282,6 +290,43 @@ describe('HomePage', () => {
       expect(notification).toHaveClass('whitespace-pre-line');
       expect(notification).toHaveTextContent('Question ID: q1');
       expect(notification).toHaveTextContent('Question ID: q2');
+    });
+
+    it('重複パック検出時に更新確認ダイアログが表示される', async () => {
+      const user = userEvent.setup();
+      mockImportPack.mockResolvedValue({ duplicateFilePath: '/path/to/quiz.json' });
+      renderHomePage();
+
+      await user.click(screen.getByRole('button', { name: 'インポート' }));
+
+      expect(screen.getByText('このパックは既にインポートされています。更新しますか？')).toBeInTheDocument();
+    });
+
+    it('更新確認ダイアログで「更新する」をクリックすると forceImportPack が呼ばれる', async () => {
+      const user = userEvent.setup();
+      mockImportPack.mockResolvedValue({ duplicateFilePath: '/path/to/quiz.json' });
+      mockForceImportPack.mockResolvedValue(null);
+      renderHomePage();
+
+      await user.click(screen.getByRole('button', { name: 'インポート' }));
+      await user.click(screen.getByRole('button', { name: '更新する' }));
+
+      expect(mockForceImportPack).toHaveBeenCalledWith('/path/to/quiz.json');
+    });
+
+    it('更新確認ダイアログでキャンセルすると何もしない', async () => {
+      const user = userEvent.setup();
+      mockImportPack.mockResolvedValue({ duplicateFilePath: '/path/to/quiz.json' });
+      renderHomePage();
+
+      await user.click(screen.getByRole('button', { name: 'インポート' }));
+      // ダイアログ内の「キャンセル」ボタンをクリック
+      const dialogs = screen.getAllByRole('dialog');
+      const updateDialog = dialogs.find(d => d.textContent?.includes('更新しますか'));
+      const cancelBtn = within(updateDialog!).getByRole('button', { name: 'キャンセル' });
+      await user.click(cancelBtn);
+
+      expect(mockForceImportPack).not.toHaveBeenCalled();
     });
   });
 

@@ -12,8 +12,8 @@ import type {
   WeakQuestion,
 } from './types';
 
-export const importQuizPack = (filePath: string) =>
-  invoke<QuizPack>('import_quiz_pack', { filePath });
+export const importQuizPack = (filePath: string, force?: boolean) =>
+  invoke<QuizPack>('import_quiz_pack', { filePath, force });
 
 export const listQuizPacks = () => invoke<QuizPackSummary[]>('list_quiz_packs');
 

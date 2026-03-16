@@ -147,19 +147,19 @@ describe('useQuizPacks', () => {
       expect(mockImportQuizPack).not.toHaveBeenCalled();
     });
 
-    it('インポート失敗時にエラーメッセージを返す', async () => {
+    it('インポート失敗時にエラーオブジェクトを返す', async () => {
       mockOpenFileDialog.mockResolvedValue('/path/to/invalid.json');
       mockImportQuizPack.mockRejectedValue(new Error('無効なJSON形式'));
 
       const { result } = renderHook(() => useQuizPacks());
       await waitFor(() => expect(result.current.loading).toBe(false));
 
-      let errorMsg: string | null = null;
+      let importResult: Awaited<ReturnType<typeof result.current.importPack>>;
       await act(async () => {
-        errorMsg = await result.current.importPack();
+        importResult = await result.current.importPack();
       });
 
-      expect(errorMsg).toBe('無効なJSON形式');
+      expect(importResult!).toEqual({ error: '無効なJSON形式' });
     });
 
     it('Tauriからの文字列エラーをそのまま返す', async () => {
@@ -170,12 +170,12 @@ describe('useQuizPacks', () => {
       const { result } = renderHook(() => useQuizPacks());
       await waitFor(() => expect(result.current.loading).toBe(false));
 
-      let errorMsg: string | null = null;
+      let importResult: Awaited<ReturnType<typeof result.current.importPack>>;
       await act(async () => {
-        errorMsg = await result.current.importPack();
+        importResult = await result.current.importPack();
       });
 
-      expect(errorMsg).toBe('JSON構文エラー: expected value at line 1 column 3');
+      expect(importResult!).toEqual({ error: 'JSON構文エラー: expected value at line 1 column 3' });
     });
 
     it('インポート成功時はnullを返す', async () => {
@@ -190,12 +190,27 @@ describe('useQuizPacks', () => {
       const { result } = renderHook(() => useQuizPacks());
       await waitFor(() => expect(result.current.loading).toBe(false));
 
-      let errorMsg: string | null = null;
+      let importResult: Awaited<ReturnType<typeof result.current.importPack>>;
       await act(async () => {
-        errorMsg = await result.current.importPack();
+        importResult = await result.current.importPack();
       });
 
-      expect(errorMsg).toBeNull();
+      expect(importResult!).toBeNull();
+    });
+
+    it('重複パックの場合にduplicateFilePathを返す', async () => {
+      mockOpenFileDialog.mockResolvedValue('/path/to/quiz.json');
+      mockImportQuizPack.mockRejectedValue("パックID 'test-pack' は既にインポートされています");
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let importResult: Awaited<ReturnType<typeof result.current.importPack>>;
+      await act(async () => {
+        importResult = await result.current.importPack();
+      });
+
+      expect(importResult!).toEqual({ duplicateFilePath: '/path/to/quiz.json' });
     });
 
     it('ダイアログ表示中から importing が true になる', async () => {
@@ -207,7 +222,7 @@ describe('useQuizPacks', () => {
       const { result } = renderHook(() => useQuizPacks());
       await waitFor(() => expect(result.current.loading).toBe(false));
 
-      let importPromise: Promise<string | null>;
+      let importPromise: ReturnType<typeof result.current.importPack>;
       act(() => {
         importPromise = result.current.importPack();
       });
@@ -242,19 +257,56 @@ describe('useQuizPacks', () => {
       expect(result.current.importing).toBe(false);
     });
 
-    it('ファイルダイアログがエラーの場合にエラーメッセージを返す', async () => {
+    it('ファイルダイアログがエラーの場合にエラーオブジェクトを返す', async () => {
       mockOpenFileDialog.mockRejectedValue(new Error('ダイアログを開けません'));
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let importResult: Awaited<ReturnType<typeof result.current.importPack>>;
+      await act(async () => {
+        importResult = await result.current.importPack();
+      });
+
+      expect(importResult!).toEqual({ error: 'ダイアログを開けません' });
+      expect(result.current.importing).toBe(false);
+    });
+  });
+
+  describe('forceImportPack', () => {
+    it('force=trueでインポートして一覧を更新する', async () => {
+      mockImportQuizPack.mockResolvedValue({
+        id: 'pack-1',
+        name: '更新パック',
+        importedAt: '2026-03-12T12:00:00Z',
+        questions: [],
+      });
 
       const { result } = renderHook(() => useQuizPacks());
       await waitFor(() => expect(result.current.loading).toBe(false));
 
       let errorMsg: string | null = null;
       await act(async () => {
-        errorMsg = await result.current.importPack();
+        errorMsg = await result.current.forceImportPack('/path/to/quiz.json');
       });
 
-      expect(errorMsg).toBe('ダイアログを開けません');
-      expect(result.current.importing).toBe(false);
+      expect(mockImportQuizPack).toHaveBeenCalledWith('/path/to/quiz.json', true);
+      expect(errorMsg).toBeNull();
+      expect(mockListQuizPacks).toHaveBeenCalledTimes(2);
+    });
+
+    it('更新インポート失敗時にエラーメッセージを返す', async () => {
+      mockImportQuizPack.mockRejectedValue(new Error('更新に失敗'));
+
+      const { result } = renderHook(() => useQuizPacks());
+      await waitFor(() => expect(result.current.loading).toBe(false));
+
+      let errorMsg: string | null = null;
+      await act(async () => {
+        errorMsg = await result.current.forceImportPack('/path/to/quiz.json');
+      });
+
+      expect(errorMsg).toBe('更新に失敗');
     });
   });
 

@@ -84,14 +84,15 @@ fn parse_json(content: &str) -> Result<RawQuizPackFile, String> {
 }
 
 /// JSON文字列をパースしてDBに保存する内部関数
-fn import_from_content(content: &str, connection: &Connection) -> Result<QuizPack, String> {
+fn import_from_content(content: &str, connection: &Connection, force: bool) -> Result<QuizPack, String> {
     // 1. JSONパース
     let raw = parse_json(content)?;
 
     // 2. パックID一意性チェック
     let existing = quiz_pack_repo::get_quiz_pack(connection, &raw.pack.id)
         .map_err(|e| format!("DB検索に失敗しました: {e}"))?;
-    if existing.is_some() {
+
+    if existing.is_some() && !force {
         return Err(format!(
             "パックID '{}' は既にインポートされています",
             raw.pack.id
@@ -101,19 +102,32 @@ fn import_from_content(content: &str, connection: &Connection) -> Result<QuizPac
     // 3. 問題バリデーション
     let questions = validate_questions(&raw.questions)?;
 
-    // 4. QuizPack を組み立て
+    if existing.is_some() {
+        // 更新インポート
+        update_import(connection, &raw, questions)
+    } else {
+        // 新規インポート
+        create_import(connection, &raw, questions)
+    }
+}
+
+/// 新規インポート処理
+fn create_import(
+    connection: &Connection,
+    raw: &RawQuizPackFile,
+    questions: Vec<crate::models::Question>,
+) -> Result<QuizPack, String> {
     let now = chrono::Utc::now().to_rfc3339();
     let pack = QuizPack {
-        id: raw.pack.id,
-        name: raw.pack.name,
-        description: raw.pack.description,
+        id: raw.pack.id.clone(),
+        name: raw.pack.name.clone(),
+        description: raw.pack.description.clone(),
         source: "imported".to_string(),
         imported_at: now,
         updated_at: None,
         questions,
     };
 
-    // 5. トランザクション内でDB保存
     let tx = connection
         .unchecked_transaction()
         .map_err(|e| format!("トランザクション開始に失敗しました: {e}"))?;
@@ -129,15 +143,70 @@ fn import_from_content(content: &str, connection: &Connection) -> Result<QuizPac
     Ok(pack)
 }
 
+/// 更新インポート処理
+fn update_import(
+    connection: &Connection,
+    raw: &RawQuizPackFile,
+    questions: Vec<crate::models::Question>,
+) -> Result<QuizPack, String> {
+    use crate::repositories::history_repo;
+    use crate::services::save_service;
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let pack_id = &raw.pack.id;
+
+    let tx = connection
+        .unchecked_transaction()
+        .map_err(|e| format!("トランザクション開始に失敗しました: {e}"))?;
+
+    // 1. 旧問題リストを取得（履歴リセット判定用）
+    let old_questions = question_repo::get_questions_by_pack(&tx, pack_id)
+        .map_err(|e| format!("旧問題の取得に失敗しました: {e}"))?;
+
+    // 2. パックメタ情報を更新
+    quiz_pack_repo::update_quiz_pack(
+        &tx,
+        pack_id,
+        &raw.pack.name,
+        raw.pack.description.as_deref(),
+        questions.len(),
+        &now,
+    )
+    .map_err(|e| format!("パック更新に失敗しました: {e}"))?;
+
+    // 3. 旧問題を削除 → 新問題を挿入
+    question_repo::delete_questions_by_pack(&tx, pack_id)
+        .map_err(|e| format!("旧問題の削除に失敗しました: {e}"))?;
+    question_repo::insert_questions(&tx, pack_id, &questions)
+        .map_err(|e| format!("問題保存に失敗しました: {e}"))?;
+
+    // 4. 履歴リセット判定 → 該当問題の履歴を削除
+    let reset_targets = save_service::detect_reset_targets(&old_questions, &questions);
+    if !reset_targets.is_empty() {
+        history_repo::delete_history_for_questions(&tx, pack_id, &reset_targets)
+            .map_err(|e| format!("履歴リセットに失敗しました: {e}"))?;
+    }
+
+    tx.commit()
+        .map_err(|e| format!("コミットに失敗しました: {e}"))?;
+
+    // 更新後のパックを返す
+    let pack = quiz_pack_repo::get_quiz_pack(connection, pack_id)
+        .map_err(|e| format!("パック取得に失敗しました: {e}"))?
+        .ok_or_else(|| format!("更新後のパック '{pack_id}' が見つかりません"))?;
+
+    Ok(pack)
+}
+
 /// ファイルパスからクイズパックをインポートする
-pub fn import_quiz_pack(path: &Path, connection: &Connection) -> Result<QuizPack, String> {
+pub fn import_quiz_pack(path: &Path, connection: &Connection, force: bool) -> Result<QuizPack, String> {
     let content = read_file(path)?;
-    import_from_content(&content, connection)
+    import_from_content(&content, connection, force)
 }
 
 /// JSON文字列からクイズパックをインポートする
-pub fn import_quiz_pack_from_str(json: &str, connection: &Connection) -> Result<QuizPack, String> {
-    import_from_content(json, connection)
+pub fn import_quiz_pack_from_str(json: &str, connection: &Connection, force: bool) -> Result<QuizPack, String> {
+    import_from_content(json, connection, force)
 }
 
 #[cfg(test)]
@@ -507,12 +576,12 @@ mod tests {
         let file = write_temp_file(valid_json());
 
         // 1回目のインポートは成功する
-        let result = import_quiz_pack(file.path(), &connection);
+        let result = import_quiz_pack(file.path(), &connection, false);
         assert!(result.is_ok(), "1回目のインポートは成功すること");
 
         // 2回目は重複エラー
         let file2 = write_temp_file(valid_json());
-        let result = import_quiz_pack(file2.path(), &connection);
+        let result = import_quiz_pack(file2.path(), &connection, false);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("既にインポートされています"));
     }
@@ -524,7 +593,7 @@ mod tests {
         let connection = open_test_connection();
         let file = write_temp_file(valid_json());
 
-        let result = import_quiz_pack(file.path(), &connection);
+        let result = import_quiz_pack(file.path(), &connection, false);
         assert!(result.is_ok(), "インポートが成功すること");
 
         let pack = result.unwrap();
@@ -553,7 +622,7 @@ mod tests {
         file.write_all(&content)
             .expect("一時ファイルへの書き込みに成功すること");
 
-        let result = import_quiz_pack(file.path(), &connection);
+        let result = import_quiz_pack(file.path(), &connection, false);
         assert!(result.is_ok(), "BOM付きファイルのインポートが成功すること");
     }
 
@@ -573,7 +642,7 @@ mod tests {
         let connection = open_test_connection();
         let file = write_temp_file(json);
 
-        let result = import_quiz_pack(file.path(), &connection);
+        let result = import_quiz_pack(file.path(), &connection, false);
         assert!(result.is_ok());
         assert!(result.unwrap().description.is_none());
     }
@@ -594,7 +663,7 @@ mod tests {
         let connection = open_test_connection();
         let file = write_temp_file(json);
 
-        let result = import_quiz_pack(file.path(), &connection);
+        let result = import_quiz_pack(file.path(), &connection, false);
         assert!(result.is_ok());
     }
 
@@ -603,7 +672,7 @@ mod tests {
     #[test]
     fn json文字列から直接インポートできる() {
         let connection = open_test_connection();
-        let result = import_quiz_pack_from_str(valid_json(), &connection);
+        let result = import_quiz_pack_from_str(valid_json(), &connection, false);
         assert!(result.is_ok(), "JSON文字列からインポートが成功すること");
 
         let pack = result.unwrap();
@@ -615,9 +684,258 @@ mod tests {
     #[test]
     fn json文字列からの重複インポートはエラーを返す() {
         let connection = open_test_connection();
-        let _ = import_quiz_pack_from_str(valid_json(), &connection);
+        let _ = import_quiz_pack_from_str(valid_json(), &connection, false);
 
-        let result = import_quiz_pack_from_str(valid_json(), &connection);
+        let result = import_quiz_pack_from_str(valid_json(), &connection, false);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("既にインポートされています"));
+    }
+
+    // --- 更新インポート ---
+
+    #[test]
+    fn 更新インポートで学習履歴が保持される() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        // 初回インポート
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        // q1に履歴を追加
+        history_repo::insert_answer_record(
+            &connection,
+            &AnswerRecord {
+                pack_id: "test-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
+            },
+        ).unwrap();
+
+        // 問題文のみ変更（正答は同じ）→ 履歴保持される
+        let updated_json = r#"{
+            "pack": { "id": "test-pack", "name": "更新パック", "description": "更新版" },
+            "questions": [
+                {
+                    "id": "q1",
+                    "type": "multiple_choice",
+                    "question": "1+1は何ですか？",
+                    "choices": [{"text": "1"}, {"text": "2"}],
+                    "answer": 1
+                },
+                {
+                    "id": "q2",
+                    "type": "true_false",
+                    "question": "地球は丸い",
+                    "answer": true
+                }
+            ]
+        }"#;
+
+        let result = import_quiz_pack_from_str(updated_json, &connection, true);
+        assert!(result.is_ok(), "更新インポートが成功すること: {:?}", result.err());
+
+        let pack = result.unwrap();
+        assert_eq!(pack.name, "更新パック");
+        assert_eq!(pack.description.as_deref(), Some("更新版"));
+        assert_eq!(pack.questions.len(), 2);
+        assert!(pack.updated_at.is_some(), "updated_atが設定されること");
+
+        // q1の履歴が保持されていること
+        let q1_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = 'test-pack' AND question_id = 'q1';",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(q1_history, 1, "q1の履歴が保持されること");
+    }
+
+    #[test]
+    fn 更新インポートで正答変更された問題の履歴がリセットされる() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        // q1, q2に履歴追加
+        for qid in ["q1", "q2"] {
+            history_repo::insert_answer_record(
+                &connection,
+                &AnswerRecord {
+                    pack_id: "test-pack".to_string(),
+                    question_id: qid.to_string(),
+                    is_correct: true,
+                    user_answer: "a".to_string(),
+                    answered_at: "2026-03-10T10:00:00Z".to_string(),
+                    session_id: "test-session".to_string(),
+                },
+            ).unwrap();
+        }
+
+        // q1の正答を変更（answer: 1→0）
+        let updated_json = r#"{
+            "pack": { "id": "test-pack", "name": "テストパック" },
+            "questions": [
+                {
+                    "id": "q1",
+                    "type": "multiple_choice",
+                    "question": "1+1は？",
+                    "choices": [{"text": "1"}, {"text": "2"}],
+                    "answer": 0
+                },
+                {
+                    "id": "q2",
+                    "type": "true_false",
+                    "question": "地球は丸い",
+                    "answer": true
+                }
+            ]
+        }"#;
+
+        import_quiz_pack_from_str(updated_json, &connection, true).unwrap();
+
+        // q1の履歴がリセットされていること
+        let q1_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = 'test-pack' AND question_id = 'q1';",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(q1_history, 0, "q1の履歴がリセットされること");
+
+        // q2の履歴は保持されていること
+        let q2_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = 'test-pack' AND question_id = 'q2';",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(q2_history, 1, "q2の履歴が保持されること");
+    }
+
+    #[test]
+    fn 問題idが変わった場合に旧idの履歴が孤立する() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        // q1に履歴追加
+        history_repo::insert_answer_record(
+            &connection,
+            &AnswerRecord {
+                pack_id: "test-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
+            },
+        ).unwrap();
+
+        // q1をq_newに変更（旧q1の履歴は孤立する）
+        let updated_json = r#"{
+            "pack": { "id": "test-pack", "name": "テストパック" },
+            "questions": [
+                {
+                    "id": "q_new",
+                    "type": "multiple_choice",
+                    "question": "1+1は？",
+                    "choices": [{"text": "1"}, {"text": "2"}],
+                    "answer": 1
+                }
+            ]
+        }"#;
+
+        import_quiz_pack_from_str(updated_json, &connection, true).unwrap();
+
+        // 旧q1の履歴が残っている（孤立）
+        let q1_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = 'test-pack' AND question_id = 'q1';",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(q1_history, 1, "旧q1の履歴が孤立して残ること");
+    }
+
+    #[test]
+    fn 明示的なパック削除では履歴も削除される() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        history_repo::insert_answer_record(
+            &connection,
+            &AnswerRecord {
+                pack_id: "test-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "test-session".to_string(),
+            },
+        ).unwrap();
+
+        quiz_pack_repo::delete_quiz_pack(&connection, "test-pack").unwrap();
+
+        let history_count: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = 'test-pack';",
+                [],
+                |row| row.get(0),
+            )
+            .unwrap();
+        assert_eq!(history_count, 0, "パック削除で履歴もCASCADE削除されること");
+    }
+
+    #[test]
+    fn 更新インポートの途中失敗時にrollbackされる() {
+        let connection = open_test_connection();
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        // バリデーションエラーになるJSONで更新インポート
+        let invalid_json = r#"{
+            "pack": { "id": "test-pack", "name": "更新パック" },
+            "questions": [
+                {
+                    "id": "q1",
+                    "type": "text_input",
+                    "question": "テスト",
+                    "answer": ""
+                }
+            ]
+        }"#;
+
+        let result = import_quiz_pack_from_str(invalid_json, &connection, true);
+        assert!(result.is_err(), "バリデーションエラーになること");
+
+        // 元のパックが残っていること
+        let pack = quiz_pack_repo::get_quiz_pack(&connection, "test-pack")
+            .unwrap()
+            .unwrap();
+        assert_eq!(pack.name, "テストパック", "元のパック名が残ること");
+        assert_eq!(pack.questions.len(), 3, "元の問題数が残ること");
+    }
+
+    #[test]
+    fn force_falseで既存パックの更新インポートはエラーを返す() {
+        let connection = open_test_connection();
+        import_quiz_pack_from_str(valid_json(), &connection, false).unwrap();
+
+        let result = import_quiz_pack_from_str(valid_json(), &connection, false);
         assert!(result.is_err());
         assert!(result.unwrap_err().contains("既にインポートされています"));
     }
@@ -626,7 +944,7 @@ mod tests {
     fn サンプルパックjsonをインポートできる() {
         let connection = open_test_connection();
         let sample_json = include_str!("../../resources/sample-quiz-pack.json");
-        let result = import_quiz_pack_from_str(sample_json, &connection);
+        let result = import_quiz_pack_from_str(sample_json, &connection, false);
         assert!(
             result.is_ok(),
             "サンプルパックのインポートに失敗: {}",
@@ -786,7 +1104,7 @@ mod tests {
             ]
         }"#;
         let connection = open_test_connection();
-        let result = import_quiz_pack_from_str(json, &connection);
+        let result = import_quiz_pack_from_str(json, &connection, false);
         assert!(result.is_ok(), "multi_selectパックのインポートに失敗: {:?}", result.err());
 
         let pack = result.unwrap();

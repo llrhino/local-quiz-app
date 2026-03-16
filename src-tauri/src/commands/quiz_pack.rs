@@ -12,11 +12,16 @@ const SAMPLE_PACK_JSON: &str = include_str!("../../resources/sample-quiz-pack.js
 #[tauri::command]
 pub fn import_quiz_pack(
     file_path: String,
+    force: Option<bool>,
     database: State<'_, Database>,
 ) -> Result<QuizPack, String> {
     database
         .with_connection(|connection| {
-            let pack = import_service::import_quiz_pack(Path::new(&file_path), connection)?;
+            let pack = import_service::import_quiz_pack(
+                Path::new(&file_path),
+                connection,
+                force.unwrap_or(false),
+            )?;
             Ok(pack)
         })
         .map_err(|e| e.to_string())
@@ -59,7 +64,7 @@ pub fn delete_quiz_pack(pack_id: String, database: State<'_, Database>) -> Resul
 pub fn seed_sample_pack(database: State<'_, Database>) -> Result<QuizPack, String> {
     database
         .with_connection(|connection| {
-            let pack = import_service::import_quiz_pack_from_str(SAMPLE_PACK_JSON, connection)?;
+            let pack = import_service::import_quiz_pack_from_str(SAMPLE_PACK_JSON, connection, false)?;
             Ok(pack)
         })
         .map_err(|e| e.to_string())

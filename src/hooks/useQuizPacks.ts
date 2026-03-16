@@ -38,17 +38,35 @@ export function useQuizPacks() {
     void refresh().finally(() => setLoading(false));
   }, [refresh]);
 
-  const importPack = useCallback(async (): Promise<string | null> => {
+  const importPack = useCallback(async (): Promise<{ error?: string; duplicateFilePath?: string } | null> => {
     setImporting(true);
+    let filePath: string | null = null;
     try {
-      const filePath = await openFileDialog();
+      filePath = await openFileDialog();
       if (!filePath) return null;
 
       await importQuizPack(filePath);
       await refresh();
       return null;
     } catch (e) {
-      return extractErrorMessage(e, 'インポートに失敗しました');
+      const message = extractErrorMessage(e, 'インポートに失敗しました');
+      if (message.includes('既にインポートされています') && filePath) {
+        return { duplicateFilePath: filePath };
+      }
+      return { error: message };
+    } finally {
+      setImporting(false);
+    }
+  }, [refresh]);
+
+  const forceImportPack = useCallback(async (filePath: string): Promise<string | null> => {
+    setImporting(true);
+    try {
+      await importQuizPack(filePath, true);
+      await refresh();
+      return null;
+    } catch (e) {
+      return extractErrorMessage(e, '更新インポートに失敗しました');
     } finally {
       setImporting(false);
     }
@@ -86,5 +104,5 @@ export function useQuizPacks() {
     }
   }, []);
 
-  return { packs, loading, error, importing, refresh, importPack, seedSample, deletePack, exportPack };
+  return { packs, loading, error, importing, refresh, importPack, forceImportPack, seedSample, deletePack, exportPack };
 }
