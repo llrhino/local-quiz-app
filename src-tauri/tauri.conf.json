@@ -32,6 +32,15 @@
       "icons/128x128@2x.png",
       "icons/icon.ico",
       "icons/icon.png"
-    ]
+    ],
+    "windows": {
+      "wix": {
+        "language": "ja-JP"
+      },
+      "nsis": {
+        "languages": ["Japanese"],
+        "displayLanguageSelector": false
+      }
+    }
   }
 }
