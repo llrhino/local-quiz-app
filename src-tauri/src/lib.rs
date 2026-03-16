@@ -37,6 +37,7 @@ pub fn build_app() -> tauri::Builder<tauri::Wry> {
             commands::settings::open_file_dialog,
             commands::settings::open_save_file_dialog,
             commands::quiz_pack::export_quiz_pack,
+            commands::quiz_pack::detect_reset_targets,
         ])
 }
 

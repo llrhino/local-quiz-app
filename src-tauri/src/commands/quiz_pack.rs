@@ -95,6 +95,44 @@ pub fn save_quiz_pack(
 }
 
 #[tauri::command]
+pub fn detect_reset_targets(
+    pack_id: String,
+    questions: Vec<Question>,
+    database: State<'_, Database>,
+) -> Result<Vec<String>, String> {
+    database
+        .with_connection(|connection| {
+            let old_questions = question_repo::get_questions_by_pack(connection, &pack_id)?;
+            // save と同じリナンバーを適用してから差分検出
+            let renumbered: Vec<Question> = questions
+                .into_iter()
+                .enumerate()
+                .map(|(i, q)| renumber_question(q, format!("q{}", i + 1)))
+                .collect();
+            let targets = save_service::detect_reset_targets(&old_questions, &renumbered);
+            Ok(targets)
+        })
+        .map_err(|e| e.to_string())
+}
+
+fn renumber_question(question: Question, id: String) -> Question {
+    match question {
+        Question::MultipleChoice { question, choices, answer, explanation, .. } => {
+            Question::MultipleChoice { id, question, choices, answer, explanation }
+        }
+        Question::TrueFalse { question, answer, explanation, .. } => {
+            Question::TrueFalse { id, question, answer, explanation }
+        }
+        Question::TextInput { question, answer, explanation, .. } => {
+            Question::TextInput { id, question, answer, explanation }
+        }
+        Question::MultiSelect { question, choices, answer, explanation, .. } => {
+            Question::MultiSelect { id, question, choices, answer, explanation }
+        }
+    }
+}
+
+#[tauri::command]
 pub fn export_quiz_pack(
     pack_id: String,
     file_path: String,
@@ -252,5 +290,175 @@ mod tests {
             | Question::TextInput { id, .. }
             | Question::MultiSelect { id, .. } => id,
         }
+    }
+
+    #[test]
+    fn save_quiz_pack_updates_existing_pack() {
+        let connection = open_test_connection();
+
+        // まず新規作成
+        let created = save_quiz_pack_impl(
+            &connection,
+            None,
+            "初期パック".to_string(),
+            Some("初期説明".to_string()),
+            sample_questions(),
+        )
+        .expect("pack should be created");
+
+        // 更新（問題を2つに減らし、パック名を変更）
+        let updated_questions = vec![
+            Question::MultipleChoice {
+                id: "q1".to_string(),
+                question: "更新後の問題".to_string(),
+                choices: vec![
+                    Choice { text: "A".to_string() },
+                    Choice { text: "B".to_string() },
+                ],
+                answer: 0,
+                explanation: None,
+            },
+            Question::TrueFalse {
+                id: "q2".to_string(),
+                question: "更新後のTF".to_string(),
+                answer: false,
+                explanation: None,
+            },
+        ];
+
+        let updated = save_quiz_pack_impl(
+            &connection,
+            Some(created.id.clone()),
+            "更新パック".to_string(),
+            Some("更新説明".to_string()),
+            updated_questions,
+        )
+        .expect("pack should be updated");
+
+        assert_eq!(updated.id, created.id);
+        assert_eq!(updated.name, "更新パック");
+        assert_eq!(updated.description.as_deref(), Some("更新説明"));
+        assert_eq!(updated.questions.len(), 2);
+        assert!(updated.updated_at.is_some(), "updated_atが設定されること");
+
+        // DB上のquestion_countが更新されていること
+        let question_count: i64 = connection
+            .query_row(
+                "SELECT question_count FROM quiz_packs WHERE id = ?1;",
+                [&updated.id],
+                |row| row.get(0),
+            )
+            .expect("question_count should be readable");
+        assert_eq!(question_count, 2);
+
+        // 旧問題が削除されて新問題のみ残ること
+        let stored_ids: Vec<String> = connection
+            .prepare(
+                "SELECT question_id FROM questions WHERE pack_id = ?1 ORDER BY sort_order ASC;",
+            )
+            .expect("statement should prepare")
+            .query_map([&updated.id], |row| row.get(0))
+            .expect("rows should be readable")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("rows should collect");
+        assert_eq!(stored_ids, vec!["q1", "q2"]);
+    }
+
+    #[test]
+    fn save_quiz_pack_update_resets_history_for_changed_questions() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+
+        // 新規作成
+        let created = save_quiz_pack_impl(
+            &connection,
+            None,
+            "履歴テスト".to_string(),
+            None,
+            sample_questions(),
+        )
+        .expect("pack should be created");
+
+        // q1, q2 に履歴を追加
+        for qid in ["q1", "q2"] {
+            history_repo::insert_answer_record(
+                &connection,
+                &AnswerRecord {
+                    pack_id: created.id.clone(),
+                    question_id: qid.to_string(),
+                    is_correct: true,
+                    user_answer: "a".to_string(),
+                    answered_at: "2026-03-10T10:00:00Z".to_string(),
+                    session_id: "test-session".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        // q1のcorrect_answerを変更、q2は変更なし
+        let updated_questions = vec![
+            Question::MultipleChoice {
+                id: "q1".to_string(),
+                question: "最も安全な通信方式はどれか".to_string(),
+                choices: vec![
+                    Choice { text: "HTTP".to_string() },
+                    Choice { text: "HTTPS".to_string() },
+                ],
+                answer: 0, // 1→0 に変更
+                explanation: None,
+            },
+            Question::TrueFalse {
+                id: "q2".to_string(),
+                question: "TLS は暗号化に使われる".to_string(),
+                answer: true, // 変更なし
+                explanation: None,
+            },
+        ];
+
+        save_quiz_pack_impl(
+            &connection,
+            Some(created.id.clone()),
+            "履歴テスト".to_string(),
+            None,
+            updated_questions,
+        )
+        .expect("pack should be updated");
+
+        // q1の履歴がリセットされていること
+        let q1_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = ?1 AND question_id = 'q1';",
+                [&created.id],
+                |row| row.get(0),
+            )
+            .expect("should query");
+        assert_eq!(q1_history, 0, "q1の履歴がリセットされること");
+
+        // q2の履歴が残っていること
+        let q2_history: i64 = connection
+            .query_row(
+                "SELECT COUNT(*) FROM learning_history WHERE pack_id = ?1 AND question_id = 'q2';",
+                [&created.id],
+                |row| row.get(0),
+            )
+            .expect("should query");
+        assert_eq!(q2_history, 1, "q2の履歴が保持されること");
+    }
+
+    #[test]
+    fn save_quiz_pack_update_fails_for_nonexistent_pack() {
+        let connection = open_test_connection();
+
+        let result = save_quiz_pack_impl(
+            &connection,
+            Some("nonexistent-id".to_string()),
+            "存在しないパック".to_string(),
+            None,
+            sample_questions(),
+        );
+
+        assert!(result.is_err(), "存在しないパックIDではエラーになること");
     }
 }

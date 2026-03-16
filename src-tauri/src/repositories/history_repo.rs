@@ -23,6 +23,36 @@ pub fn insert_answer_record(connection: &Connection, record: &AnswerRecord) -> R
     Ok(())
 }
 
+pub fn delete_history_for_questions(
+    connection: &Connection,
+    pack_id: &str,
+    question_ids: &[String],
+) -> RepoResult<()> {
+    if question_ids.is_empty() {
+        return Ok(());
+    }
+
+    let placeholders: Vec<String> = (0..question_ids.len())
+        .map(|i| format!("?{}", i + 2))
+        .collect();
+    let sql = format!(
+        "DELETE FROM learning_history WHERE pack_id = ?1 AND question_id IN ({});",
+        placeholders.join(", ")
+    );
+
+    let mut statement = connection.prepare(&sql)?;
+    let mut params: Vec<Box<dyn rusqlite::types::ToSql>> = Vec::new();
+    params.push(Box::new(pack_id.to_string()));
+    for qid in question_ids {
+        params.push(Box::new(qid.clone()));
+    }
+
+    let param_refs: Vec<&dyn rusqlite::types::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+    statement.execute(param_refs.as_slice())?;
+
+    Ok(())
+}
+
 pub fn get_learning_history(
     connection: &Connection,
     pack_id: &str,

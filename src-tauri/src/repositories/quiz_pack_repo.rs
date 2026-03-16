@@ -108,6 +108,33 @@ pub fn get_quiz_pack(connection: &Connection, pack_id: &str) -> RepoResult<Optio
     }
 }
 
+pub fn update_quiz_pack(
+    connection: &Connection,
+    pack_id: &str,
+    name: &str,
+    description: Option<&str>,
+    question_count: usize,
+    updated_at: &str,
+) -> RepoResult<()> {
+    let rows = connection.execute(
+        "UPDATE quiz_packs SET name = ?1, description = ?2, question_count = ?3, updated_at = ?4
+         WHERE id = ?5;",
+        params![
+            name,
+            description.unwrap_or(""),
+            question_count as i64,
+            updated_at,
+            pack_id
+        ],
+    )?;
+
+    if rows == 0 {
+        return Err(format!("クイズパック '{pack_id}' が見つかりません").into());
+    }
+
+    Ok(())
+}
+
 pub fn delete_quiz_pack(connection: &Connection, pack_id: &str) -> RepoResult<()> {
     connection.execute("DELETE FROM quiz_packs WHERE id = ?1;", [pack_id])?;
     Ok(())

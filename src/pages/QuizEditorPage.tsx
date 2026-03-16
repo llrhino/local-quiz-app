@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
-import { exportQuizPack, openSaveFileDialog, saveQuizPack } from '../lib/commands';
+import { detectResetTargets, exportQuizPack, getQuizPack, openSaveFileDialog, saveQuizPack } from '../lib/commands';
 import type { Question, QuestionType } from '../lib/types';
 
 const FIRST_HINT_STORAGE_KEY = 'quiz-editor-first-hint-dismissed';
@@ -200,6 +200,46 @@ function buildSaveQuestion(question: EditorQuestion): Question {
   };
 }
 
+function questionToEditorQuestion(question: Question): EditorQuestion {
+  const base = {
+    id: question.id,
+    question: question.question,
+    explanation: question.explanation ?? '',
+  };
+
+  if (question.type === 'multiple_choice') {
+    return {
+      ...base,
+      type: 'multiple_choice',
+      choices: question.choices.map((c) => c.text),
+      answer: question.answer,
+    };
+  }
+
+  if (question.type === 'multi_select') {
+    return {
+      ...base,
+      type: 'multi_select',
+      choices: question.choices.map((c) => c.text),
+      answer: question.answer,
+    };
+  }
+
+  if (question.type === 'true_false') {
+    return {
+      ...base,
+      type: 'true_false',
+      answer: question.answer,
+    };
+  }
+
+  return {
+    ...base,
+    type: 'text_input',
+    answer: question.answer,
+  };
+}
+
 function handleEditorFieldKeyDown(event: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
   event.stopPropagation();
 }
@@ -215,14 +255,45 @@ export default function QuizEditorPage() {
   const [showHint, setShowHint] = useState(false);
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [savedPackId, setSavedPackId] = useState<string | undefined>();
+  const [savedPackId, setSavedPackId] = useState<string | undefined>(packId);
   const [savedPackName, setSavedPackName] = useState('');
+  const [loading, setLoading] = useState(isEditMode);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [resetTargets, setResetTargets] = useState<string[] | null>(null);
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const questionSequence = useRef(0);
   const questionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const packNameError = submitted && !name.trim() ? 'パック名を入力してください' : undefined;
   const questionErrors = questions.map((question) => validateQuestion(question));
+
+  // 編集モード: 既存パックデータの読み込み
+  useEffect(() => {
+    if (!packId) return;
+
+    let cancelled = false;
+    const loadPack = async () => {
+      try {
+        const pack = await getQuizPack(packId);
+        if (cancelled) return;
+        setName(pack.name);
+        setDescription(pack.description ?? '');
+        const editorQuestions = pack.questions.map(questionToEditorQuestion);
+        setQuestions(editorQuestions);
+        questionSequence.current = editorQuestions.length;
+        setSavedPackName(pack.name);
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'パックの読み込みに失敗しました';
+        setLoadError(message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadPack();
+    return () => { cancelled = true; };
+  }, [packId]);
 
   useEffect(() => {
     if (!isEditMode && !localStorage.getItem(FIRST_HINT_STORAGE_KEY)) {
@@ -295,7 +366,7 @@ export default function QuizEditorPage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSave = async (skipResetConfirmation = false) => {
     setSubmitted(true);
     setNotification(null);
 
@@ -314,17 +385,33 @@ export default function QuizEditorPage() {
       return;
     }
 
+    const saveQuestions = questions.map((question) => buildSaveQuestion(question));
+
+    // 編集モード: 保存前にリセット対象を確認
+    if (isEditMode && packId && !skipResetConfirmation) {
+      try {
+        const targets = await detectResetTargets(packId, saveQuestions);
+        if (targets.length > 0) {
+          setResetTargets(targets);
+          return; // 確認ダイアログを表示して中断
+        }
+      } catch {
+        // 差分検出に失敗しても保存は続行
+      }
+    }
+
     setSaving(true);
     try {
       const saved = await saveQuizPack({
-        packId: undefined,
+        packId: packId,
         name: name.trim(),
         description: description.trim() ? description.trim() : undefined,
-        questions: questions.map((question) => buildSaveQuestion(question)),
+        questions: saveQuestions,
       });
       setSavedPackId(saved.id);
       setSavedPackName(saved.name);
       setDirty(false);
+      setResetTargets(null);
       setNotification({ type: 'success', message: '保存しました' });
     } catch (error) {
       const message = error instanceof Error ? error.message : '保存に失敗しました';
@@ -357,11 +444,61 @@ export default function QuizEditorPage() {
     }
   };
 
-  const saveDisabled = isEditMode || saving || !dirty;
-  const exportDisabled = isEditMode || exporting || !savedPackId || dirty;
+  const saveDisabled = saving || !dirty;
+  const exportDisabled = exporting || !savedPackId || dirty;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <p className="text-slate-500 dark:text-slate-400">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-4 py-10 text-center">
+        <p className="text-red-600 dark:text-red-400">{loadError}</p>
+        <Link
+          className="inline-flex items-center justify-center rounded-full border border-slate-300 px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+          to="/"
+        >
+          トップに戻る
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {resetTargets && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <Card className="mx-4 max-w-md space-y-4">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-50">
+              学習履歴のリセット確認
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-300">
+              以下の設問の学習履歴がリセットされます:
+            </p>
+            <p className="rounded-xl bg-slate-100 px-4 py-3 text-sm font-medium text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+              {resetTargets.map((id) => id.toUpperCase()).join(', ')}
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                onClick={() => setResetTargets(null)}
+                type="button"
+              >
+                キャンセル
+              </button>
+              <Button onClick={() => void handleSave(true)}>
+                更新する
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
       <Card className="overflow-hidden p-0">
         <div className="border-b border-slate-200/70 bg-[radial-gradient(circle_at_top_left,_rgba(14,165,233,0.18),_transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.96),rgba(248,250,252,0.92))] px-6 py-6 dark:border-slate-700 dark:bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.18),_transparent_28%),linear-gradient(135deg,rgba(15,23,42,0.96),rgba(30,41,59,0.92))]">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -375,7 +512,7 @@ export default function QuizEditorPage() {
                 </h2>
                 <p className="max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-300">
                   {isEditMode
-                    ? '編集モードは次の issue で実装します。新規作成モードのUIと保存フローのみ利用できます。'
+                    ? '既存のクイズパックを編集します。正誤判定に影響する変更があった問題の学習履歴はリセットされます。'
                     : 'カードごとに問題タイプを切り替えながら、手動保存でクイズパックを組み立てます。'}
                 </p>
               </div>
@@ -385,9 +522,11 @@ export default function QuizEditorPage() {
                     ● 未保存の変更あり
                   </span>
                 )}
-                <span className="text-sm text-slate-500 dark:text-slate-400">
-                  パックIDは保存時に自動生成されます
-                </span>
+                {!isEditMode && (
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
+                    パックIDは保存時に自動生成されます
+                  </span>
+                )}
               </div>
             </div>
 
@@ -789,7 +928,6 @@ export default function QuizEditorPage() {
       <div className="flex justify-center">
         <button
           className="inline-flex items-center justify-center rounded-full border border-dashed border-slate-300 bg-white/75 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800/75 dark:text-slate-200 dark:hover:bg-slate-700"
-          disabled={isEditMode}
           onClick={addQuestion}
           type="button"
         >

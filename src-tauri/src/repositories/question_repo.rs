@@ -49,6 +49,11 @@ pub fn insert_questions(
     Ok(())
 }
 
+pub fn delete_questions_by_pack(connection: &Connection, pack_id: &str) -> RepoResult<()> {
+    connection.execute("DELETE FROM questions WHERE pack_id = ?1;", [pack_id])?;
+    Ok(())
+}
+
 pub fn get_questions_by_pack(connection: &Connection, pack_id: &str) -> RepoResult<Vec<Question>> {
     let mut statement = connection.prepare(
         "SELECT question_id, question_type, question_text, choices_json, correct_answer, explanation

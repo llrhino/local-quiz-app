@@ -58,3 +58,6 @@ export const openSaveFileDialog = (defaultName: string) =>
 
 export const exportQuizPack = (packId: string, filePath: string) =>
   invoke<void>('export_quiz_pack', { packId, filePath });
+
+export const detectResetTargets = (packId: string, questions: Question[]) =>
+  invoke<string[]>('detect_reset_targets', { packId, questions });
