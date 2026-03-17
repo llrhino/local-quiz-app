@@ -5,6 +5,8 @@ import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import LinkText from '../components/common/LinkText';
 import Modal from '../components/common/Modal';
+import { usePackFilter } from '../hooks/usePackFilter';
+import type { SortKey } from '../hooks/usePackFilter';
 import { useQuizPacks } from '../hooks/useQuizPacks';
 import type { QuizPackSummary } from '../lib/types';
 
@@ -90,6 +92,15 @@ function QuizPackCard({
 
 export default function HomePage() {
   const { packs, loading, error, importing, importPack, forceImportPack, seedSample, deletePack, exportPack } = useQuizPacks();
+  const {
+    sortKey,
+    setSortKey,
+    excludeAllCorrect,
+    setExcludeAllCorrect,
+    searchQuery,
+    setSearchQuery,
+    filteredPacks,
+  } = usePackFilter(packs);
   const [notification, setNotification] = useState<{ type: 'error' | 'success'; message: string } | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<QuizPackSummary | null>(null);
   const [updateImportFilePath, setUpdateImportFilePath] = useState<string | null>(null);
@@ -191,6 +202,44 @@ export default function HomePage() {
         </div>
       )}
 
+      {!loading && !error && packs.length > 0 && (
+        <Card className="space-y-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <input
+              className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:placeholder:text-slate-500"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="パック名で検索"
+              type="text"
+              value={searchQuery}
+            />
+            <div className="flex items-center gap-3">
+              <label className="flex items-center gap-1 text-sm text-slate-700 dark:text-slate-300">
+                <span>並び替え</span>
+                <select
+                  aria-label="並び替え"
+                  className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-sm text-slate-900 focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:[color-scheme:dark]"
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  value={sortKey}
+                >
+                  <option value="updatedAtDesc">更新が新しい順</option>
+                  <option value="importedAtAsc">登録が古い順</option>
+                  <option value="correctRateAsc">正答率が低い順</option>
+                </select>
+              </label>
+              <label className="flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-300">
+                <input
+                  checked={excludeAllCorrect}
+                  className="h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:border-slate-600"
+                  onChange={(e) => setExcludeAllCorrect(e.target.checked)}
+                  type="checkbox"
+                />
+                全問正解を除外
+              </label>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {!loading && !error && packs.length === 0 && (
         <Card className="space-y-4 text-center">
           <p className="text-slate-500 dark:text-slate-400">
@@ -208,9 +257,17 @@ export default function HomePage() {
         </Card>
       )}
 
-      {!loading && !error && packs.length > 0 && (
+      {!loading && !error && packs.length > 0 && filteredPacks.length === 0 && (
+        <Card className="text-center">
+          <p className="text-slate-500 dark:text-slate-400">
+            条件に一致するパックがありません。
+          </p>
+        </Card>
+      )}
+
+      {!loading && !error && filteredPacks.length > 0 && (
         <div className="space-y-4">
-          {packs.map((pack) => (
+          {filteredPacks.map((pack) => (
             <QuizPackCard
               key={pack.id}
               onDelete={setDeleteTarget}

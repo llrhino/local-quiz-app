@@ -26,4 +26,5 @@ pub struct QuizPackSummary {
     pub updated_at: Option<String>,
     pub last_studied_at: Option<String>,
     pub all_correct: bool,
+    pub correct_rate: Option<f64>,
 }

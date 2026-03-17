@@ -28,7 +28,7 @@ const pack1: QuizPackSummary = {
   description: 'JSの基本を学ぶ',
   source: 'import',
   questionCount: 10,
-  importedAt: '2026-03-10T09:00:00Z',
+  importedAt: '2026-03-12T10:00:00Z',
   lastStudiedAt: '2026-03-11T14:30:00Z',
   allCorrect: false,
 };
@@ -38,7 +38,7 @@ const pack2: QuizPackSummary = {
   name: 'Rust入門',
   source: 'import',
   questionCount: 5,
-  importedAt: '2026-03-12T10:00:00Z',
+  importedAt: '2026-03-10T09:00:00Z',
   lastStudiedAt: null,
   allCorrect: false,
 };
@@ -383,6 +383,94 @@ describe('HomePage', () => {
       await user.click(screen.getByRole('button', { name: '削除する' }));
 
       expect(screen.getByText('削除に失敗しました')).toBeInTheDocument();
+    });
+  });
+
+  describe('検索・ソート・フィルター', () => {
+    it('検索ボックスが表示される', () => {
+      renderHomePage();
+      expect(screen.getByPlaceholderText('パック名で検索')).toBeInTheDocument();
+    });
+
+    it('ソートのセレクトボックスが表示される', () => {
+      renderHomePage();
+      expect(screen.getByLabelText('並び替え')).toBeInTheDocument();
+    });
+
+    it('全問正解を除外チェックボックスが表示される', () => {
+      renderHomePage();
+      expect(screen.getByLabelText('全問正解を除外')).toBeInTheDocument();
+    });
+
+    it('検索でパック名をフィルターできる', async () => {
+      const user = userEvent.setup();
+      renderHomePage();
+
+      await user.type(screen.getByPlaceholderText('パック名で検索'), 'JavaScript');
+
+      const packCards = screen.getAllByTestId('pack-card');
+      expect(packCards).toHaveLength(1);
+      expect(within(packCards[0]).getByText('JavaScript基礎')).toBeInTheDocument();
+    });
+
+    it('検索結果が0件の場合メッセージを表示する', async () => {
+      const user = userEvent.setup();
+      renderHomePage();
+
+      await user.type(screen.getByPlaceholderText('パック名で検索'), '存在しないパック');
+
+      expect(screen.getByText('条件に一致するパックがありません。')).toBeInTheDocument();
+    });
+
+    it('ソートを変更できる', async () => {
+      const user = userEvent.setup();
+      renderHomePage();
+
+      await user.selectOptions(screen.getByLabelText('並び替え'), 'importedAtAsc');
+      // ソート順の変更自体が動作すればOK（表示順はusePackFilterのテストで検証済み）
+      expect(screen.getByLabelText('並び替え')).toHaveValue('importedAtAsc');
+    });
+
+    it('全問正解を除外チェックボックスが動作する', async () => {
+      const allCorrectPack: QuizPackSummary = { ...pack1, allCorrect: true };
+      mockUseQuizPacks.mockReturnValue({
+        packs: [allCorrectPack, pack2],
+        loading: false,
+        error: null,
+        importing: false,
+        refresh: mockRefresh,
+        importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
+        seedSample: mockSeedSample,
+        deletePack: mockDeletePack,
+        exportPack: mockExportPack,
+      });
+      const user = userEvent.setup();
+      renderHomePage();
+
+      expect(screen.getAllByTestId('pack-card')).toHaveLength(2);
+
+      await user.click(screen.getByLabelText('全問正解を除外'));
+
+      expect(screen.getAllByTestId('pack-card')).toHaveLength(1);
+      expect(screen.getByText('Rust入門')).toBeInTheDocument();
+    });
+
+    it('パックが0件のときは検索・ソート・フィルターを表示しない', () => {
+      mockUseQuizPacks.mockReturnValue({
+        packs: [],
+        loading: false,
+        error: null,
+        importing: false,
+        refresh: mockRefresh,
+        importPack: mockImportPack,
+        forceImportPack: mockForceImportPack,
+        seedSample: mockSeedSample,
+        deletePack: mockDeletePack,
+        exportPack: mockExportPack,
+      });
+      renderHomePage();
+      expect(screen.queryByPlaceholderText('パック名で検索')).not.toBeInTheDocument();
     });
   });
 

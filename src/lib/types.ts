@@ -65,6 +65,7 @@ export type QuizPackSummary = {
   updatedAt?: string | null;
   lastStudiedAt?: string | null;
   allCorrect: boolean;
+  correctRate?: number | null;
 };
 
 export type AnswerRecord = {

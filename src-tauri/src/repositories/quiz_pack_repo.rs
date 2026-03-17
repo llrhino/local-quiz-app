@@ -44,7 +44,12 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
                          WHERE lh2.pack_id = qp.id AND lh2.is_correct = 1
                         ) = qp.question_count
                 THEN 1 ELSE 0
-            END AS all_correct
+            END AS all_correct,
+            CASE
+                WHEN COUNT(lh.id) > 0
+                THEN CAST(SUM(CASE WHEN lh.is_correct = 1 THEN 1 ELSE 0 END) AS REAL) / COUNT(lh.id)
+                ELSE NULL
+            END AS correct_rate
          FROM quiz_packs qp
          LEFT JOIN learning_history lh ON lh.pack_id = qp.id
          GROUP BY qp.id, qp.name, qp.description, qp.source, qp.question_count, qp.imported_at, qp.updated_at
@@ -67,6 +72,7 @@ pub fn list_quiz_packs(connection: &Connection) -> RepoResult<Vec<QuizPackSummar
             updated_at: row.get(6)?,
             last_studied_at: row.get(7)?,
             all_correct: row.get::<_, i64>(8)? != 0,
+            correct_rate: row.get::<_, Option<f64>>(9)?,
         })
     })?;
 
@@ -243,6 +249,52 @@ mod tests {
 
         let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
         assert!(!summaries[0].all_correct, "全問に正解していなければall_correctがfalse");
+    }
+
+    #[test]
+    fn correct_rate_is_none_when_no_history() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        question_repo::insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
+        assert_eq!(summaries[0].correct_rate, None, "学習履歴がないパックはcorrect_rateがNone");
+    }
+
+    #[test]
+    fn correct_rate_reflects_answer_history() {
+        use crate::models::AnswerRecord;
+        use crate::repositories::history_repo;
+
+        let connection = open_test_connection();
+        let pack = sample_pack();
+
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        question_repo::insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // 3回回答: 2回正解、1回不正解 → correct_rate = 2/3 ≈ 0.6667
+        for (qid, correct) in [("q1", true), ("q2", true), ("q3", false)] {
+            history_repo::insert_answer_record(
+                &connection,
+                &AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: qid.to_string(),
+                    is_correct: correct,
+                    user_answer: "test".to_string(),
+                    answered_at: "2026-03-10T10:00:00Z".to_string(),
+                    session_id: "test-session".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        let summaries = list_quiz_packs(&connection).expect("quiz pack list should be returned");
+        let rate = summaries[0].correct_rate.expect("correct_rateが計算されている");
+        assert!((rate - 2.0 / 3.0).abs() < 0.001, "correct_rate should be ~0.6667, got {rate}");
     }
 
     #[test]
