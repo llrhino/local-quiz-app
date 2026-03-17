@@ -135,9 +135,9 @@
     {
       "id": "q-014",
       "type": "text_input",
-      "question": "NISTが策定したサイバーセキュリティフレームワーク（https://www.nist.gov/cyberframework）の5つの機能のうち、最初に行うべき機能は何か？（カタカナ3文字）",
+      "question": "NISTが策定したサイバーセキュリティフレームワーク（https://www.nist.gov/cyberframework）の5つの機能のうち、最初に行うべき機能は何か？（漢字2文字）",
       "answer": "識別",
-      "explanation": "NISTサイバーセキュリティフレームワークの5つの機能は「識別（Identify）」「防御（Protect）」「検知（Detect）」「対応（Respond）」「復旧（Recover）」です。フレームワークの詳細は https://www.nist.gov/cyberframework を参照してください。"
+      "explanation": "NISTサイバーセキュリティフレームワークの5つの機能は「識別（Identify）」「防御（Protect）」「検知（Detect）」「対応（Respond）」「復旧（Recover）」です。設問は漢字2文字を求めているため、最初の機能の答えは「識別」です。フレームワークの詳細は https://www.nist.gov/cyberframework を参照してください。"
     },
     {
       "id": "q-015",
