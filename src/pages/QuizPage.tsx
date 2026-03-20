@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Card from '../components/common/Card';
 import Modal from '../components/common/Modal';
+import AnswerFeedback from '../components/quiz/AnswerFeedback';
 import QuestionRenderer from '../components/quiz/QuestionRenderer';
 import QuizProgress from '../components/quiz/QuizProgress';
 import QuizResult from '../components/quiz/QuizResult';
@@ -141,6 +142,7 @@ export default function QuizPage() {
 
       {answerResult && (
         <div className="mt-4 space-y-4">
+          <AnswerFeedback isCorrect={answerResult.isCorrect} />
           <QuizResult
             isCorrect={answerResult.isCorrect}
             correctAnswer={formatDisplayAnswer(currentQuestion, String(currentQuestion.answer))}

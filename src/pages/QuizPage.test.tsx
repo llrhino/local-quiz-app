@@ -152,6 +152,28 @@ describe('QuizPage', () => {
 
       expect(screen.getByText('不正解')).toBeInTheDocument();
     });
+
+    it('正解時に正解フィードバック画像が表示される', async () => {
+      setupSessionState();
+      mockSubmitAndSave.mockResolvedValue({ isCorrect: true });
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      await user.click(screen.getByText('2'));
+
+      expect(screen.getByAltText('正解')).toBeInTheDocument();
+    });
+
+    it('不正解時に不正解フィードバック画像が表示される', async () => {
+      setupSessionState();
+      mockSubmitAndSave.mockResolvedValue({ isCorrect: false });
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      await user.click(screen.getByText('1'));
+
+      expect(screen.getByAltText('不正解')).toBeInTheDocument();
+    });
   });
 
   describe('次の問題への遷移', () => {
