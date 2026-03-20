@@ -199,7 +199,7 @@ describe('QuizPage', () => {
       });
       renderQuizPage();
 
-      expect(screen.getByText('クイズ完了')).toBeInTheDocument();
+      expect(screen.getByText('正答率')).toBeInTheDocument();
       expect(screen.getByText('2問中2問正解')).toBeInTheDocument();
       expect(screen.getByText('100.0%')).toBeInTheDocument();
     });
