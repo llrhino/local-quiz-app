@@ -66,14 +66,17 @@ export default function QuizSummary({
         >
           正答率
         </span>
-        <p className={`text-7xl font-bold tabular-nums ${rateColorClass}`}>
+        <p
+          className={`text-7xl font-bold tabular-nums ${rateColorClass}`}
+          aria-label={`正答率 ${accuracyRate}パーセント`}
+        >
           {accuracyRate}%
         </p>
       </div>
 
       {/* 第2層: 補助情報 */}
       <div className="py-6 text-center">
-        <p className="text-base text-slate-400 dark:text-slate-500">
+        <p className="text-base text-slate-500 dark:text-slate-400">
           {total}問中{correctCount}問正解
         </p>
       </div>
@@ -96,7 +99,10 @@ export default function QuizSummary({
                 key={r.question.id}
               >
                 <span>問題 {i + 1}</span>
-                <span className={r.isCorrect ? 'text-green-600' : 'text-slate-400'}>
+                <span
+                  className={r.isCorrect ? 'text-green-600' : 'text-slate-500'}
+                  aria-label={r.isCorrect ? '正解' : '不正解'}
+                >
                   {r.isCorrect ? '○' : '×'}
                 </span>
               </li>

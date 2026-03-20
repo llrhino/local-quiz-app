@@ -230,7 +230,7 @@ describe('QuizSummary', () => {
       const listItems = screen.getAllByRole('listitem');
       // q3は不正解
       const incorrectMark = listItems[2].querySelector('span:last-child');
-      expect(incorrectMark?.className).toContain('text-slate-400');
+      expect(incorrectMark?.className).toContain('text-slate-500');
       expect(incorrectMark?.className).not.toContain('text-red-500');
     });
 
@@ -263,6 +263,61 @@ describe('QuizSummary', () => {
       render(<QuizSummary {...defaultProps} />);
       const retryButton = screen.getByRole('button', { name: 'もう一度挑戦する' });
       expect(retryButton).toHaveFocus();
+    });
+  });
+
+  describe('アクセシビリティ', () => {
+    it('正答率の数字にaria-labelが付与される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const rateElement = screen.getByLabelText('正答率 66.7パーセント');
+      expect(rateElement).toBeInTheDocument();
+    });
+
+    it('正答率100%のaria-labelが正しい', () => {
+      render(
+        <QuizSummary
+          {...defaultProps}
+          answers={['1', 'true', '東京']}
+        />,
+      );
+      const rateElement = screen.getByLabelText('正答率 100.0パーセント');
+      expect(rateElement).toBeInTheDocument();
+    });
+
+    it('回答一覧の○にaria-label="正解"が付与される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const correctLabels = screen.getAllByLabelText('正解');
+      expect(correctLabels).toHaveLength(2); // q1, q2が正解
+    });
+
+    it('回答一覧の×にaria-label="不正解"が付与される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const incorrectLabels = screen.getAllByLabelText('不正解');
+      expect(incorrectLabels).toHaveLength(1); // q3が不正解
+    });
+
+    it('回答一覧の見出しがh3で表示される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const heading = screen.getByRole('heading', { level: 3, name: '回答一覧' });
+      expect(heading).toBeInTheDocument();
+    });
+
+    it('補助情報のテキストがコントラスト比4.5:1以上を確保する色を使用する', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const subInfo = screen.getByText('3問中2問正解');
+      // ライトモードでslate-400(#94a3b8)はコントラスト不足、slate-500(#64748b)以上が必要
+      // dark:プレフィックス付きはダークモード用なので除外して確認
+      const lightClasses = subInfo.className.split(' ').filter(c => !c.startsWith('dark:'));
+      expect(lightClasses).not.toContain('text-slate-400');
+      expect(lightClasses).toContain('text-slate-500');
+    });
+
+    it('不正解マークのテキストがコントラスト比4.5:1以上を確保する色を使用する', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const incorrectMark = screen.getByLabelText('不正解');
+      // slate-400(#94a3b8)はコントラスト不足、slate-500(#64748b)以上が必要
+      expect(incorrectMark.className).not.toContain('text-slate-400');
+      expect(incorrectMark.className).toContain('text-slate-500');
     });
   });
 });
