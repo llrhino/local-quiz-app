@@ -266,6 +266,41 @@ describe('QuizSummary', () => {
     });
   });
 
+  describe('100%時のPERFECT演出', () => {
+    const perfectProps = {
+      ...defaultProps,
+      answers: ['1', 'true', '東京'],
+    };
+
+    it('正答率100%のとき「PERFECT」テキストが表示される', () => {
+      render(<QuizSummary {...perfectProps} />);
+      expect(screen.getByText('PERFECT')).toBeInTheDocument();
+    });
+
+    it('「PERFECT」テキストがtext-smで表示される', () => {
+      render(<QuizSummary {...perfectProps} />);
+      const perfect = screen.getByText('PERFECT');
+      expect(perfect.className).toContain('text-sm');
+    });
+
+    it('トロフィーのSVGアイコンが表示される', () => {
+      render(<QuizSummary {...perfectProps} />);
+      const svg = document.querySelector('svg');
+      expect(svg).toBeInTheDocument();
+    });
+
+    it('100%未満のとき「PERFECT」テキストが表示されない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      expect(screen.queryByText('PERFECT')).not.toBeInTheDocument();
+    });
+
+    it('100%未満のときトロフィーアイコンが表示されない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const svg = document.querySelector('svg');
+      expect(svg).not.toBeInTheDocument();
+    });
+  });
+
   describe('アクセシビリティ', () => {
     it('正答率の数字にaria-labelが付与される', () => {
       render(<QuizSummary {...defaultProps} />);
