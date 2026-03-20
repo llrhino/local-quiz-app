@@ -63,7 +63,7 @@ export default function QuizSummary({
   return (
     <Card>
       {/* 第1層: 正答率（視覚的アンカー） */}
-      <div className="flex flex-col items-center">
+      <div className="flex flex-col items-center animate-stagger-in" style={{ animationDelay: '0ms' }}>
         <span
           className="text-xs text-slate-500 dark:text-slate-400"
           style={{ letterSpacing: '0.2em' }}
@@ -105,14 +105,14 @@ export default function QuizSummary({
       </div>
 
       {/* 第2層: 補助情報 */}
-      <div className="py-6 text-center">
+      <div className="py-6 text-center animate-stagger-in" style={{ animationDelay: '200ms' }}>
         <p className="text-base text-slate-500 dark:text-slate-400">
           {total}問中{correctCount}問正解
         </p>
       </div>
 
       {/* 第3層: 回答一覧 */}
-      <div>
+      <div className="animate-stagger-in" style={{ animationDelay: '400ms' }}>
         <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">回答一覧</h3>
         {!isExpanded ? (
           <button

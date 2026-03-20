@@ -301,6 +301,36 @@ describe('QuizSummary', () => {
     });
   });
 
+  describe('スタガード登場アニメーション', () => {
+    it('正答率セクションにアニメーションクラス（delay: 0ms）が適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const rateSection = screen.getByText('正答率').closest('div');
+      expect(rateSection?.className).toContain('animate-stagger-in');
+      expect(rateSection).toHaveStyle({ animationDelay: '0ms' });
+    });
+
+    it('補足テキストセクションにアニメーションクラス（delay: 200ms）が適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const subInfo = screen.getByText('3問中2問正解').closest('div');
+      expect(subInfo?.className).toContain('animate-stagger-in');
+      expect(subInfo).toHaveStyle({ animationDelay: '200ms' });
+    });
+
+    it('回答一覧セクションにアニメーションクラス（delay: 400ms）が適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const answersSection = screen.getByRole('heading', { level: 3, name: '回答一覧' }).closest('div');
+      expect(answersSection?.className).toContain('animate-stagger-in');
+      expect(answersSection).toHaveStyle({ animationDelay: '400ms' });
+    });
+
+    it('ボタンエリアにアニメーションクラスが適用されない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const retryButton = screen.getByRole('button', { name: 'もう一度挑戦する' });
+      const buttonArea = retryButton.closest('div');
+      expect(buttonArea?.className).not.toContain('animate-stagger-in');
+    });
+  });
+
   describe('アクセシビリティ', () => {
     it('正答率の数字にaria-labelが付与される', () => {
       render(<QuizSummary {...defaultProps} />);
