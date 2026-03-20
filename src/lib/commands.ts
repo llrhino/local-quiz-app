@@ -61,3 +61,6 @@ export const exportQuizPack = (packId: string, filePath: string) =>
 
 export const detectResetTargets = (packId: string, questions: Question[]) =>
   invoke<string[]>('detect_reset_targets', { packId, questions });
+
+export const getBestSessionAccuracy = (packId: string, excludeSessionId?: string) =>
+  invoke<number | null>('get_best_session_accuracy', { packId, excludeSessionId });

@@ -11,6 +11,7 @@ import QuizResult from '../components/quiz/QuizResult';
 import QuizSummary from '../components/quiz/QuizSummary';
 import { useQuizSession } from '../hooks/useQuizSession';
 import { useQuizSessionActions } from '../hooks/useQuizSessionActions';
+import { getBestSessionAccuracy } from '../lib/commands';
 import { formatDisplayAnswer } from '../lib/formatAnswer';
 import { shouldIgnoreGlobalShortcut } from '../lib/keyboard';
 
@@ -23,12 +24,13 @@ export default function QuizPage() {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
   const { startQuiz, submitAndSave } = useQuizSessionActions();
-  const { questions, currentIndex, answers, isCompleted, streak, maxStreak, resetSession, nextQuestion } =
+  const { questions, currentIndex, answers, isCompleted, streak, maxStreak, sessionId, resetSession, nextQuestion } =
     useQuizSession();
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
   const [showAbortDialog, setShowAbortDialog] = useState(false);
   const [loadError, setLoadError] = useState(false);
+  const [previousBestAccuracy, setPreviousBestAccuracy] = useState<number | null>(null);
 
   useEffect(() => {
     if (packId) {
@@ -37,6 +39,14 @@ export default function QuizPage() {
       });
     }
   }, [packId, startQuiz]);
+
+  useEffect(() => {
+    if (isCompleted && packId && sessionId) {
+      getBestSessionAccuracy(packId, sessionId)
+        .then((best) => setPreviousBestAccuracy(best))
+        .catch(() => setPreviousBestAccuracy(null));
+    }
+  }, [isCompleted, packId, sessionId]);
 
   const currentQuestion = questions[currentIndex];
 
@@ -93,6 +103,7 @@ export default function QuizPage() {
         questions={questions}
         answers={answers}
         maxStreak={maxStreak}
+        previousBestAccuracy={previousBestAccuracy}
         onGoHome={handleGoHome}
         onRetry={handleRetry}
       />

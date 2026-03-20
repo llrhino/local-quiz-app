@@ -25,6 +25,7 @@ type Props = {
   questions: Question[];
   answers: string[];
   maxStreak?: number;
+  previousBestAccuracy?: number | null;
   onGoHome: () => void;
   onRetry: () => void;
 };
@@ -46,6 +47,7 @@ export default function QuizSummary({
   questions,
   answers,
   maxStreak,
+  previousBestAccuracy,
   onGoHome,
   onRetry,
 }: Props) {
@@ -66,6 +68,12 @@ export default function QuizSummary({
 
   const shouldCollapse = total >= COLLAPSE_THRESHOLD;
   const [isExpanded, setIsExpanded] = useState(!shouldCollapse);
+
+  const currentAccuracy = total > 0 ? correctCount / total : 0;
+  const improvement =
+    previousBestAccuracy != null && currentAccuracy > previousBestAccuracy
+      ? ((currentAccuracy - previousBestAccuracy) * 100).toFixed(1)
+      : null;
 
   const rateColorClass = getRateColorClass(accuracyPercent);
 
@@ -126,6 +134,11 @@ export default function QuizSummary({
         <p className="text-base text-slate-500 dark:text-slate-400">
           {total}問中{correctCount}問正解
         </p>
+        {improvement && (
+          <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
+            前回より +{improvement}% 改善!
+          </p>
+        )}
         {maxStreak != null && maxStreak >= MAX_STREAK_DISPLAY_THRESHOLD && (
           <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
             最大連続正解: {maxStreak}問

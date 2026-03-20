@@ -57,6 +57,24 @@ pub fn get_sessions(
 }
 
 #[tauri::command]
+pub fn get_best_session_accuracy(
+    pack_id: String,
+    exclude_session_id: Option<String>,
+    database: State<'_, Database>,
+) -> Result<Option<f64>, String> {
+    database
+        .with_connection(|connection| {
+            let best = history_service::get_best_session_accuracy(
+                connection,
+                &pack_id,
+                exclude_session_id.as_deref(),
+            )?;
+            Ok(best)
+        })
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn get_weak_questions(
     pack_id: String,
     database: State<'_, Database>,

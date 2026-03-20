@@ -233,6 +233,31 @@ pub fn get_weak_questions(connection: &Connection, pack_id: &str) -> RepoResult<
     Ok(rows.collect::<Result<Vec<_>, _>>()?)
 }
 
+/// 同一パックの過去セッションのうち最高正答率を返す。
+/// exclude_session_id を指定すると、そのセッションを除外して計算する（現在のセッションを除くため）。
+/// 過去セッションが存在しない場合は None を返す。
+pub fn get_best_session_accuracy(
+    connection: &Connection,
+    pack_id: &str,
+    exclude_session_id: Option<&str>,
+) -> RepoResult<Option<f64>> {
+    let sql = "SELECT MAX(accuracy) FROM (
+                 SELECT CAST(COALESCE(SUM(is_correct), 0) AS REAL) / COUNT(*) AS accuracy
+                 FROM learning_history
+                 WHERE pack_id = ?1 AND session_id != ''
+                   AND (?2 IS NULL OR session_id != ?2)
+                 GROUP BY session_id
+               );";
+
+    let result: Option<f64> = connection.query_row(
+        sql,
+        params![pack_id, exclude_session_id],
+        |row| row.get(0),
+    )?;
+
+    Ok(result)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::repositories::question_repo::insert_questions;
@@ -240,8 +265,8 @@ mod tests {
     use crate::repositories::test_helpers::{open_test_connection, sample_history, sample_pack};
 
     use super::{
-        get_learning_history, get_pack_statistics, get_sessions, get_weak_questions,
-        insert_answer_record,
+        get_best_session_accuracy, get_learning_history, get_pack_statistics, get_sessions,
+        get_weak_questions, insert_answer_record,
     };
 
     #[test]
@@ -688,5 +713,139 @@ mod tests {
         let connection = open_test_connection();
         let sessions = get_sessions(&connection, "nonexistent").expect("should return empty");
         assert!(sessions.is_empty());
+    }
+
+    // --- get_best_session_accuracy ---
+
+    #[test]
+    fn returns_none_when_no_past_sessions_exist() {
+        let connection = open_test_connection();
+        let best =
+            get_best_session_accuracy(&connection, "nonexistent", None).expect("should return Ok");
+        assert!(best.is_none(), "過去のセッションがない場合はNoneを返す");
+    }
+
+    #[test]
+    fn returns_none_when_only_current_session_exists() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // セッション1つのみ
+        insert_answer_record(
+            &connection,
+            &crate::models::AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "current-session".to_string(),
+            },
+        )
+        .expect("history should be inserted");
+
+        let best = get_best_session_accuracy(
+            &connection,
+            &pack.id,
+            Some("current-session"),
+        )
+        .expect("should return Ok");
+        assert!(
+            best.is_none(),
+            "現在のセッションを除外すると過去セッションがない場合はNone"
+        );
+    }
+
+    #[test]
+    fn returns_best_accuracy_from_past_sessions() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // セッション1: 2問中1問正解 = 50%
+        for (i, correct) in [true, false].iter().enumerate() {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: format!("q{}", i + 1),
+                    is_correct: *correct,
+                    user_answer: "a".to_string(),
+                    answered_at: format!("2026-03-10T10:{:02}:00Z", i),
+                    session_id: "sess-1".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        // セッション2: 2問中2問正解 = 100%
+        for i in 0..2 {
+            insert_answer_record(
+                &connection,
+                &crate::models::AnswerRecord {
+                    pack_id: "security-pack".to_string(),
+                    question_id: format!("q{}", i + 1),
+                    is_correct: true,
+                    user_answer: "a".to_string(),
+                    answered_at: format!("2026-03-10T11:{:02}:00Z", i),
+                    session_id: "sess-2".to_string(),
+                },
+            )
+            .expect("history should be inserted");
+        }
+
+        // セッション3（現在）: 除外対象
+        insert_answer_record(
+            &connection,
+            &crate::models::AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: false,
+                user_answer: "a".to_string(),
+                answered_at: "2026-03-10T12:00:00Z".to_string(),
+                session_id: "current".to_string(),
+            },
+        )
+        .expect("history should be inserted");
+
+        let best = get_best_session_accuracy(&connection, &pack.id, Some("current"))
+            .expect("should return Ok");
+        assert!(best.is_some());
+        // sess-2 が100%で最高
+        assert!((best.unwrap() - 1.0).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn returns_best_accuracy_without_exclusion() {
+        let connection = open_test_connection();
+        let pack = sample_pack();
+        insert_quiz_pack(&connection, &pack).expect("quiz pack should be inserted");
+        insert_questions(&connection, &pack.id, &pack.questions)
+            .expect("questions should be inserted");
+
+        // セッション1: 1問中1問正解 = 100%
+        insert_answer_record(
+            &connection,
+            &crate::models::AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "sess-1".to_string(),
+            },
+        )
+        .expect("history should be inserted");
+
+        // exclude_session_id を None にして全セッション対象
+        let best =
+            get_best_session_accuracy(&connection, &pack.id, None).expect("should return Ok");
+        assert!(best.is_some());
+        assert!((best.unwrap() - 1.0).abs() < f64::EPSILON);
     }
 }

@@ -340,6 +340,45 @@ describe('QuizSummary', () => {
     });
   });
 
+  describe('前回スコアとの比較表示', () => {
+    it('previousBestAccuracyが指定され現在より低い場合「前回より+N%改善!」を表示する', () => {
+      // 現在: 2/3 = 66.7%, 過去最高: 50%
+      render(<QuizSummary {...defaultProps} previousBestAccuracy={0.5} />);
+      expect(screen.getByText('前回より +16.7% 改善!')).toBeInTheDocument();
+    });
+
+    it('previousBestAccuracyが指定され現在と同じ場合は比較を表示しない', () => {
+      // 現在: 2/3 ≈ 66.7%, 過去最高: 66.7%
+      const accuracy = 2 / 3;
+      render(<QuizSummary {...defaultProps} previousBestAccuracy={accuracy} />);
+      expect(screen.queryByText(/改善/)).not.toBeInTheDocument();
+    });
+
+    it('previousBestAccuracyが指定され現在より高い場合は比較を表示しない', () => {
+      // 現在: 2/3 ≈ 66.7%, 過去最高: 80%
+      render(<QuizSummary {...defaultProps} previousBestAccuracy={0.8} />);
+      expect(screen.queryByText(/改善/)).not.toBeInTheDocument();
+    });
+
+    it('previousBestAccuracyがnullの場合（初回挑戦）は比較を表示しない', () => {
+      render(<QuizSummary {...defaultProps} previousBestAccuracy={null} />);
+      expect(screen.queryByText(/改善/)).not.toBeInTheDocument();
+    });
+
+    it('previousBestAccuracyが未指定の場合は比較を表示しない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      expect(screen.queryByText(/改善/)).not.toBeInTheDocument();
+    });
+
+    it('改善表示は補助情報セクション内に表示される', () => {
+      render(<QuizSummary {...defaultProps} previousBestAccuracy={0.5} />);
+      const improvementText = screen.getByText('前回より +16.7% 改善!');
+      // 補助情報セクション（N問中M問正解の近く）に含まれる
+      const section = screen.getByText('3問中2問正解').closest('div');
+      expect(section).toContainElement(improvementText);
+    });
+  });
+
   describe('キーボード操作', () => {
     it('結果画面遷移時にプライマリCTA（もう一度挑戦する）にフォーカスが設定される', () => {
       render(<QuizSummary {...defaultProps} />);

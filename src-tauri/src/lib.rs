@@ -32,6 +32,7 @@ pub fn build_app() -> tauri::Builder<tauri::Wry> {
             commands::history::get_pack_statistics,
             commands::history::get_sessions,
             commands::history::get_weak_questions,
+            commands::history::get_best_session_accuracy,
             commands::settings::get_settings,
             commands::settings::update_setting,
             commands::settings::open_file_dialog,

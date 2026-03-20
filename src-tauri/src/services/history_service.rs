@@ -35,6 +35,15 @@ pub fn get_sessions(
     history_repo::get_sessions(connection, pack_id)
 }
 
+/// 同一パックの過去セッションの最高正答率を取得する（現在のセッションを除外可能）
+pub fn get_best_session_accuracy(
+    connection: &Connection,
+    pack_id: &str,
+    exclude_session_id: Option<&str>,
+) -> Result<Option<f64>, Box<dyn std::error::Error>> {
+    history_repo::get_best_session_accuracy(connection, pack_id, exclude_session_id)
+}
+
 /// 弱点問題を抽出する（2回以上回答かつ直近5回の正答率80%未満、正答率の低い順）
 pub fn get_weak_questions(
     connection: &Connection,
@@ -144,6 +153,42 @@ mod tests {
 
         let weak = get_weak_questions(&conn, &pack.id).unwrap();
         assert!(weak.is_empty());
+    }
+
+    // --- get_best_session_accuracy ---
+
+    #[test]
+    fn returns_none_for_best_accuracy_when_no_sessions() {
+        let conn = open_test_connection();
+        let best = get_best_session_accuracy(&conn, "nonexistent", None).unwrap();
+        assert!(best.is_none());
+    }
+
+    #[test]
+    fn returns_best_accuracy_excluding_current_session() {
+        let conn = open_test_connection();
+        let pack = sample_pack();
+        insert_quiz_pack(&conn, &pack).unwrap();
+        insert_questions(&conn, &pack.id, &pack.questions).unwrap();
+
+        // 過去セッション: 1問中1問正解 = 100%
+        save_answer_record(
+            &conn,
+            &crate::models::AnswerRecord {
+                pack_id: "security-pack".to_string(),
+                question_id: "q1".to_string(),
+                is_correct: true,
+                user_answer: "1".to_string(),
+                answered_at: "2026-03-10T10:00:00Z".to_string(),
+                session_id: "past-session".to_string(),
+            },
+        )
+        .unwrap();
+
+        let best =
+            get_best_session_accuracy(&conn, &pack.id, Some("current-session")).unwrap();
+        assert!(best.is_some());
+        assert!((best.unwrap() - 1.0).abs() < f64::EPSILON);
     }
 
     #[test]
