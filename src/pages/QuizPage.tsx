@@ -23,7 +23,7 @@ export default function QuizPage() {
   const { packId } = useParams<{ packId: string }>();
   const navigate = useNavigate();
   const { startQuiz, submitAndSave } = useQuizSessionActions();
-  const { questions, currentIndex, answers, isCompleted, streak, resetSession, nextQuestion } =
+  const { questions, currentIndex, answers, isCompleted, streak, maxStreak, resetSession, nextQuestion } =
     useQuizSession();
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
@@ -92,6 +92,7 @@ export default function QuizPage() {
       <QuizSummary
         questions={questions}
         answers={answers}
+        maxStreak={maxStreak}
         onGoHome={handleGoHome}
         onRetry={handleRetry}
       />

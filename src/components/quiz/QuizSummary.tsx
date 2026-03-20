@@ -18,9 +18,13 @@ function truncateText(text: string, maxLength: number): { display: string; isTru
   return { display: text.slice(0, maxLength) + '…', isTruncated: true };
 }
 
+/** 最大連続正解数の表示閾値 */
+const MAX_STREAK_DISPLAY_THRESHOLD = 3;
+
 type Props = {
   questions: Question[];
   answers: string[];
+  maxStreak?: number;
   onGoHome: () => void;
   onRetry: () => void;
 };
@@ -41,6 +45,7 @@ const COLLAPSE_THRESHOLD = 11;
 export default function QuizSummary({
   questions,
   answers,
+  maxStreak,
   onGoHome,
   onRetry,
 }: Props) {
@@ -121,6 +126,11 @@ export default function QuizSummary({
         <p className="text-base text-slate-500 dark:text-slate-400">
           {total}問中{correctCount}問正解
         </p>
+        {maxStreak != null && maxStreak >= MAX_STREAK_DISPLAY_THRESHOLD && (
+          <p className="mt-1 text-sm text-slate-400 dark:text-slate-500">
+            最大連続正解: {maxStreak}問
+          </p>
+        )}
       </div>
 
       {/* 第3層: 回答一覧 */}

@@ -318,6 +318,28 @@ describe('QuizSummary', () => {
     });
   });
 
+  describe('最大連続正解数の表示', () => {
+    it('maxStreakが3以上の場合に「最大連続正解: N問」を表示する', () => {
+      render(<QuizSummary {...defaultProps} maxStreak={3} />);
+      expect(screen.getByText('最大連続正解: 3問')).toBeInTheDocument();
+    });
+
+    it('maxStreakが2以下の場合は表示しない', () => {
+      render(<QuizSummary {...defaultProps} maxStreak={2} />);
+      expect(screen.queryByText(/最大連続正解/)).not.toBeInTheDocument();
+    });
+
+    it('maxStreakが0の場合は表示しない', () => {
+      render(<QuizSummary {...defaultProps} maxStreak={0} />);
+      expect(screen.queryByText(/最大連続正解/)).not.toBeInTheDocument();
+    });
+
+    it('maxStreakが未指定の場合は表示しない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      expect(screen.queryByText(/最大連続正解/)).not.toBeInTheDocument();
+    });
+  });
+
   describe('キーボード操作', () => {
     it('結果画面遷移時にプライマリCTA（もう一度挑戦する）にフォーカスが設定される', () => {
       render(<QuizSummary {...defaultProps} />);

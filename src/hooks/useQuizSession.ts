@@ -17,6 +17,7 @@ type QuizSessionState = {
   answers: string[];
   isCompleted: boolean;
   streak: number;
+  maxStreak: number;
   sessionId: string;
   startSession: (questions: Question[], shuffle?: boolean) => void;
   submitAnswer: (answer: string) => void;
@@ -31,6 +32,7 @@ const initialState = {
   answers: [] as string[],
   isCompleted: false,
   streak: 0,
+  maxStreak: 0,
   sessionId: '',
 };
 
@@ -44,6 +46,7 @@ export const useQuizSession = create<QuizSessionState>((set, get) => ({
       answers: [],
       isCompleted: false,
       streak: 0,
+      maxStreak: 0,
       sessionId: crypto.randomUUID(),
     }),
 
@@ -67,7 +70,11 @@ export const useQuizSession = create<QuizSessionState>((set, get) => ({
   resetSession: () => set(initialState),
 
   updateStreak: (isCorrect) =>
-    set((state) => ({
-      streak: isCorrect ? state.streak + 1 : 0,
-    })),
+    set((state) => {
+      const newStreak = isCorrect ? state.streak + 1 : 0;
+      return {
+        streak: newStreak,
+        maxStreak: Math.max(state.maxStreak, newStreak),
+      };
+    }),
 }));

@@ -169,6 +169,56 @@ describe('quizSessionStore', () => {
     });
   });
 
+  describe('maxStreak', () => {
+    it('初期状態でmaxStreakは0', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      expect(useQuizSession.getState().maxStreak).toBe(0);
+    });
+
+    it('streakが更新されるとmaxStreakも更新される', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      expect(useQuizSession.getState().maxStreak).toBe(2);
+    });
+
+    it('不正解でstreakがリセットされてもmaxStreakは保持される', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(false);
+      expect(useQuizSession.getState().streak).toBe(0);
+      expect(useQuizSession.getState().maxStreak).toBe(3);
+    });
+
+    it('新しいstreakがmaxStreakを超えた場合に更新される', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(false); // maxStreak=2
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true); // maxStreak=3
+      expect(useQuizSession.getState().maxStreak).toBe(3);
+    });
+
+    it('セッション開始時にmaxStreakがリセットされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().startSession(sampleQuestions);
+      expect(useQuizSession.getState().maxStreak).toBe(0);
+    });
+
+    it('resetSession時にmaxStreakがリセットされる', () => {
+      useQuizSession.getState().startSession(sampleQuestions);
+      useQuizSession.getState().updateStreak(true);
+      useQuizSession.getState().resetSession();
+      expect(useQuizSession.getState().maxStreak).toBe(0);
+    });
+  });
+
   describe('シャッフル', () => {
     it('startSession にシャッフルオプションを渡すと問題順が変わりうる', () => {
       // 十分な回数試行して、少なくとも1回は順序が変わることを確認
