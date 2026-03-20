@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { judgeAnswer } from '../../lib/judge';
 import type { Question } from '../../lib/types';
@@ -51,6 +51,11 @@ export default function QuizSummary({
 
   const rateColorClass = getRateColorClass(accuracyPercent);
 
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    retryButtonRef.current?.focus();
+  }, []);
+
   return (
     <Card>
       {/* 第1層: 正答率（視覚的アンカー） */}
@@ -101,8 +106,8 @@ export default function QuizSummary({
       </div>
 
       <div className="mt-6 flex gap-3">
-        <Button onClick={onGoHome}>パック一覧に戻る</Button>
-        <Button onClick={onRetry}>もう一度挑戦する</Button>
+        <Button variant="secondary" onClick={onGoHome}>パック一覧に戻る</Button>
+        <Button ref={retryButtonRef} onClick={onRetry}>もう一度挑戦する</Button>
       </div>
     </Card>
   );

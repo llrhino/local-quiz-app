@@ -242,4 +242,27 @@ describe('QuizSummary', () => {
       expect(correctMark?.className).toContain('text-green-600');
     });
   });
+
+  describe('ボタンの視覚的優先度', () => {
+    it('「もう一度挑戦する」はプライマリスタイル（塗りつぶし）が適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const retryButton = screen.getByRole('button', { name: 'もう一度挑戦する' });
+      expect(retryButton.className).toContain('bg-slate-900');
+    });
+
+    it('「パック一覧に戻る」はセカンダリスタイル（アウトライン）が適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const homeButton = screen.getByRole('button', { name: 'パック一覧に戻る' });
+      expect(homeButton.className).toContain('border');
+      expect(homeButton.className).not.toContain('bg-slate-900');
+    });
+  });
+
+  describe('キーボード操作', () => {
+    it('結果画面遷移時にプライマリCTA（もう一度挑戦する）にフォーカスが設定される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const retryButton = screen.getByRole('button', { name: 'もう一度挑戦する' });
+      expect(retryButton).toHaveFocus();
+    });
+  });
 });
