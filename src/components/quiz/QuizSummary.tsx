@@ -1,10 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { useCountUp } from '../../hooks/useCountUp';
+import { formatDisplayAnswer } from '../../lib/formatAnswer';
 import { judgeAnswer } from '../../lib/judge';
 import type { Question } from '../../lib/types';
 import Button from '../common/Button';
 import Card from '../common/Card';
+
+/** 問題テキストの表示上限文字数 */
+const QUESTION_TEXT_MAX_LENGTH = 30;
+
+/** 問題テキストを切り詰める */
+function truncateText(text: string, maxLength: number): { display: string; isTruncated: boolean } {
+  if (text.length <= maxLength) {
+    return { display: text, isTruncated: false };
+  }
+  return { display: text.slice(0, maxLength) + '…', isTruncated: true };
+}
 
 type Props = {
   questions: Question[];
@@ -123,20 +135,38 @@ export default function QuizSummary({
           </button>
         ) : (
           <ol className="mt-2 space-y-1">
-            {results.map((r, i) => (
-              <li
-                className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300"
-                key={r.question.id}
-              >
-                <span>問題 {i + 1}</span>
-                <span
-                  className={r.isCorrect ? 'text-green-600' : 'text-slate-500'}
-                  aria-label={r.isCorrect ? '正解' : '不正解'}
+            {results.map((r, i) => {
+              const { display, isTruncated } = truncateText(r.question.question, QUESTION_TEXT_MAX_LENGTH);
+              const userDisplayAnswer = formatDisplayAnswer(r.question, r.userAnswer);
+              const correctDisplayAnswer = formatDisplayAnswer(r.question, String(r.question.answer));
+              return (
+                <li
+                  className={`rounded px-2 py-1 text-sm ${r.isCorrect ? 'bg-green-50 dark:bg-green-950/30' : 'bg-slate-50 dark:bg-slate-800/50'}`}
+                  key={r.question.id}
                 >
-                  {r.isCorrect ? '○' : '×'}
-                </span>
-              </li>
-            ))}
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={r.isCorrect ? 'text-green-600' : 'text-slate-500'}
+                      aria-label={r.isCorrect ? '正解' : '不正解'}
+                    >
+                      {r.isCorrect ? '○' : '×'}
+                    </span>
+                    <span
+                      className="text-slate-700 dark:text-slate-300"
+                      {...(isTruncated ? { title: r.question.question } : {})}
+                    >
+                      {display}
+                    </span>
+                  </div>
+                  <div className="ml-6 text-slate-500 dark:text-slate-400">
+                    <span>回答: {userDisplayAnswer}</span>
+                    {!r.isCorrect && (
+                      <span className="ml-3">正解: {correctDisplayAnswer}</span>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         )}
       </div>

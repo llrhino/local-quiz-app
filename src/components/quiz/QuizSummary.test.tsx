@@ -63,15 +63,79 @@ describe('QuizSummary', () => {
 
   it('回答一覧に各問題の正誤を表示する', () => {
     render(<QuizSummary {...defaultProps} />);
-    // 問題番号と正誤が表示される
     const listItems = screen.getAllByRole('listitem');
     expect(listItems).toHaveLength(3);
-    expect(listItems[0]).toHaveTextContent('問題 1');
     expect(listItems[0]).toHaveTextContent('○');
-    expect(listItems[1]).toHaveTextContent('問題 2');
     expect(listItems[1]).toHaveTextContent('○');
-    expect(listItems[2]).toHaveTextContent('問題 3');
     expect(listItems[2]).toHaveTextContent('×');
+  });
+
+  describe('回答一覧の情報拡充', () => {
+    it('問題テキストを表示する', () => {
+      render(<QuizSummary {...defaultProps} />);
+      expect(screen.getByText('1+1は？')).toBeInTheDocument();
+      expect(screen.getByText('地球は丸い')).toBeInTheDocument();
+      expect(screen.getByText('日本の首都は？')).toBeInTheDocument();
+    });
+
+    it('30文字を超える問題テキストは先頭30文字+…で切り詰め、title属性に全文を設定する', () => {
+      const longQuestion: Question = {
+        id: 'long',
+        type: 'text_input',
+        question: 'これは30文字を超える非常に長い問題テキストです。ここまで表示されるかテストします。',
+        answer: 'テスト',
+      };
+      render(
+        <QuizSummary
+          questions={[longQuestion]}
+          answers={['テスト']}
+          onGoHome={vi.fn()}
+          onRetry={vi.fn()}
+        />,
+      );
+      const truncated = 'これは30文字を超える非常に長い問題テキストです。ここまで表…';
+      expect(screen.getByText(truncated)).toBeInTheDocument();
+      expect(screen.getByText(truncated)).toHaveAttribute('title', longQuestion.question);
+    });
+
+    it('30文字以下の問題テキストはそのまま表示しtitle属性を設定しない', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const questionText = screen.getByText('1+1は？');
+      expect(questionText).not.toHaveAttribute('title');
+    });
+
+    it('ユーザーの回答をformatDisplayAnswerで変換して表示する', () => {
+      render(<QuizSummary {...defaultProps} />);
+      // q1: multiple_choice, answer='1' → choices[1].text = '2'
+      expect(screen.getByText('回答: 2')).toBeInTheDocument();
+      // q2: true_false, answer='true' → '〇'
+      expect(screen.getByText('回答: 〇')).toBeInTheDocument();
+      // q3: text_input, answer='大阪' → '大阪'
+      expect(screen.getByText('回答: 大阪')).toBeInTheDocument();
+    });
+
+    it('不正解の場合のみ正解を表示する', () => {
+      render(<QuizSummary {...defaultProps} />);
+      // q3は不正解 → 正解「東京」が表示される
+      expect(screen.getByText('正解: 東京')).toBeInTheDocument();
+      // q1, q2は正解 → 「正解:」は1つだけ
+      const correctAnswerTexts = screen.getAllByText(/^正解:/);
+      expect(correctAnswerTexts).toHaveLength(1);
+    });
+
+    it('正解行に緑系のアクセントカラーが適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const listItems = screen.getAllByRole('listitem');
+      // q1は正解
+      expect(listItems[0].className).toContain('bg-green-50');
+    });
+
+    it('不正解行にニュートラルなグレーが適用される', () => {
+      render(<QuizSummary {...defaultProps} />);
+      const listItems = screen.getAllByRole('listitem');
+      // q3は不正解
+      expect(listItems[2].className).toContain('bg-slate-50');
+    });
   });
 
   it('「パック一覧に戻る」ボタンでonGoHomeが呼ばれる', async () => {
@@ -227,19 +291,15 @@ describe('QuizSummary', () => {
 
     it('不正解の○×表示にニュートラルなグレーを適用する', () => {
       render(<QuizSummary {...defaultProps} />);
-      const listItems = screen.getAllByRole('listitem');
-      // q3は不正解
-      const incorrectMark = listItems[2].querySelector('span:last-child');
-      expect(incorrectMark?.className).toContain('text-slate-500');
-      expect(incorrectMark?.className).not.toContain('text-red-500');
+      const incorrectMark = screen.getByLabelText('不正解');
+      expect(incorrectMark.className).toContain('text-slate-500');
+      expect(incorrectMark.className).not.toContain('text-red-500');
     });
 
     it('正解の○×表示に緑色を適用する', () => {
       render(<QuizSummary {...defaultProps} />);
-      const listItems = screen.getAllByRole('listitem');
-      // q1は正解
-      const correctMark = listItems[0].querySelector('span:last-child');
-      expect(correctMark?.className).toContain('text-green-600');
+      const correctMarks = screen.getAllByLabelText('正解');
+      expect(correctMarks[0].className).toContain('text-green-600');
     });
   });
 
