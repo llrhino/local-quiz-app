@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 
+import { useCountUp } from '../../hooks/useCountUp';
 import { judgeAnswer } from '../../lib/judge';
 import type { Question } from '../../lib/types';
 import Button from '../common/Button';
@@ -51,6 +52,9 @@ export default function QuizSummary({
 
   const rateColorClass = getRateColorClass(accuracyPercent);
 
+  const rateRef = useRef<HTMLParagraphElement>(null);
+  useCountUp(rateRef, accuracyPercent);
+
   const retryButtonRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     retryButtonRef.current?.focus();
@@ -67,6 +71,7 @@ export default function QuizSummary({
           正答率
         </span>
         <p
+          ref={rateRef}
           className={`text-7xl font-bold tabular-nums ${rateColorClass}`}
           aria-label={`正答率 ${accuracyRate}パーセント`}
         >
