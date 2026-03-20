@@ -40,8 +40,11 @@ jobs:
         shell: bash
         run: |
           ARTIFACTS='${{ steps.tauri_build.outputs.artifactPaths }}'
-          FILES=$(echo "$ARTIFACTS" | jq -r '.[]')
-          gh release create ${{ github.ref_name }} \
+          ARGS=()
+          while IFS= read -r f; do
+            ARGS+=("$f")
+          done < <(echo "$ARTIFACTS" | jq -r '.[]')
+          gh release create "${{ github.ref_name }}" \
             --title "${{ github.ref_name }}" \
             --notes "リリース ${{ github.ref_name }}" \
-            $FILES
+            "${ARGS[@]}"
