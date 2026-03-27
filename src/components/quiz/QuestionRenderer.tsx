@@ -51,6 +51,8 @@ export default function QuestionRenderer({
           question={question}
           onAnswer={onAnswer}
           disabled={disabled}
+          answerResult={answerResult}
+          correctAnswer={correctAnswer}
         />
       );
     case 'multi_select':

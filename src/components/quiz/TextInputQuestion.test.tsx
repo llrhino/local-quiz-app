@@ -106,4 +106,32 @@ describe('TextInputQuestion', () => {
     render(<TextInputQuestion question={question} onAnswer={vi.fn()} />);
     expect(screen.getByPlaceholderText('解答を入力')).toHaveAttribute('lang', 'ja');
   });
+
+  it('正解時に入力欄が緑色のスタイルになる', () => {
+    render(
+      <TextInputQuestion
+        question={question}
+        onAnswer={vi.fn()}
+        disabled
+        answerResult={{ userAnswer: 'HyperText Markup Language', isCorrect: true }}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('解答を入力');
+    expect(input.className).toContain('border-emerald');
+  });
+
+  it('不正解時に入力欄が赤色のスタイルになる', () => {
+    render(
+      <TextInputQuestion
+        question={question}
+        onAnswer={vi.fn()}
+        disabled
+        answerResult={{ userAnswer: 'wrong', isCorrect: false }}
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('解答を入力');
+    expect(input.className).toContain('border-red');
+  });
 });

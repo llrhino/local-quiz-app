@@ -28,6 +28,7 @@ export default function QuizPage() {
     useQuizSession();
 
   const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAbortDialog, setShowAbortDialog] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const [previousBestAccuracy, setPreviousBestAccuracy] = useState<number | null>(null);
@@ -52,11 +53,18 @@ export default function QuizPage() {
 
   const handleAnswer = useCallback(
     async (answer: string) => {
-      if (!packId || answerResult) return;
-      const result = await submitAndSave(packId, answer);
-      setAnswerResult({ isCorrect: result.isCorrect, userAnswer: answer });
+      if (!packId || answerResult || isSubmitting) return;
+      setIsSubmitting(true);
+      try {
+        const result = await submitAndSave(packId, answer);
+        setAnswerResult({ isCorrect: result.isCorrect, userAnswer: answer });
+      } catch {
+        // 回答処理が失敗しても画面を壊さない
+      } finally {
+        setIsSubmitting(false);
+      }
     },
-    [packId, answerResult, submitAndSave],
+    [packId, answerResult, isSubmitting, submitAndSave],
   );
 
   const handleNext = useCallback(() => {
@@ -146,7 +154,7 @@ export default function QuizPage() {
         <QuestionRenderer
           question={currentQuestion}
           onAnswer={handleAnswer}
-          disabled={answerResult !== null}
+          disabled={answerResult !== null || isSubmitting}
           answerResult={answerResult ?? undefined}
           correctAnswer={answerResult ? String(currentQuestion.answer) : undefined}
         />

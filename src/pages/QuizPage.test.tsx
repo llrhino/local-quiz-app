@@ -338,6 +338,44 @@ describe('QuizPage', () => {
     });
   });
 
+  describe('エラーハンドリングと二重送信防止', () => {
+    it('submitAndSaveがエラーを投げても画面が壊れず問題が表示され続ける', async () => {
+      setupSessionState();
+      mockSubmitAndSave.mockRejectedValue(new Error('保存エラー'));
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      await user.click(screen.getByText('2'));
+
+      // エラー後も問題文が表示され続ける
+      expect(screen.getByText('1+1は？')).toBeInTheDocument();
+    });
+
+    it('回答送信中は二重送信できない', async () => {
+      setupSessionState();
+      // submitAndSave を遅延させる
+      let resolveSubmit: (value: { isCorrect: boolean }) => void;
+      mockSubmitAndSave.mockImplementation(
+        () => new Promise((resolve) => { resolveSubmit = resolve; }),
+      );
+      const user = userEvent.setup();
+      renderQuizPage();
+
+      // 最初の回答
+      await user.click(screen.getByText('2'));
+      // 送信中にもう一度クリック
+      await user.click(screen.getByText('1'));
+
+      // submitAndSave は1回だけ呼ばれる
+      expect(mockSubmitAndSave).toHaveBeenCalledTimes(1);
+
+      // 遅延を解決
+      await act(async () => {
+        resolveSubmit!({ isCorrect: true });
+      });
+    });
+  });
+
   describe('中断機能', () => {
     it('中断ボタンをクリックすると確認ダイアログが表示される', async () => {
       setupSessionState();

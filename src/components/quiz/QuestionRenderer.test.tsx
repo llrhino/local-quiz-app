@@ -73,4 +73,19 @@ describe('QuestionRenderer', () => {
     expect(screen.getByRole('button', { name: '○' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '×' })).toBeDisabled();
   });
+
+  it('text_inputにanswerResultとcorrectAnswerを伝播する', () => {
+    render(
+      <QuestionRenderer
+        question={tiq}
+        onAnswer={vi.fn()}
+        disabled
+        answerResult={{ userAnswer: '間違い', isCorrect: false }}
+        correctAnswer="答え"
+      />,
+    );
+
+    const input = screen.getByPlaceholderText('解答を入力');
+    expect(input.className).toContain('border-red');
+  });
 });
