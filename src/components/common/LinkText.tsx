@@ -26,7 +26,7 @@ function renderWithLineBreaks(str: string, keyPrefix: string): ReactNode[] {
 }
 
 export default function LinkText({ text, fallback }: Props) {
-  if (text === undefined) {
+  if (text == null) {
     return <>{fallback}</>;
   }
 

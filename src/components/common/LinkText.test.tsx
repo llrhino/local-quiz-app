@@ -53,6 +53,12 @@ describe('LinkText', () => {
     expect(screen.getByText('解説はありません')).toBeInTheDocument();
   });
 
+  it('textがnullの場合はfallbackが表示される', () => {
+    // Rustバックエンドは Option<String> の None を JSON null として送信する
+    render(<LinkText text={null as unknown as undefined} fallback="解説はありません" />);
+    expect(screen.getByText('解説はありません')).toBeInTheDocument();
+  });
+
   it('URL前後のテキストはリンクにならない', () => {
     const { container } = render(<LinkText text="詳細は https://example.com を参照してください" />);
     const buttons = container.querySelectorAll('button');
